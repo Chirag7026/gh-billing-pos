@@ -1,0 +1,13 @@
+node_modules/
+dist/
+dist-electron/
+release/
+# Portable MongoDB binaries are staged in CI / locally, never committed (~115 MB)
+resources/bin/*.exe
+mongo.zip
+tools.zip
+mongo_temp/
+tools_temp/
+*.log
+.DS_Store
+Thumbs.db

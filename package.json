@@ -1,0 +1,108 @@
+{
+  "name": "golden-heera-pos",
+  "version": "1.0.0",
+  "description": "Golden Heera POS — standalone Windows desktop billing & inventory with barcode scanner + thermal/barcode printers",
+  "main": "dist-electron/main/main.js",
+  "author": "Golden Heera",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "dev:electron": "tsc -p tsconfig.electron.json && cross-env NODE_ENV=development electron .",
+    "dev:all": "concurrently -k \"npm run dev\" \"wait-on http://localhost:5173 && npm run dev:electron\"",
+    "build:renderer": "tsc --noEmit -p tsconfig.json && vite build",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "build": "npm run build:electron && npm run build:renderer && electron-builder",
+    "dist": "npm run build",
+    "rebuild": "electron-rebuild -f -w serialport",
+    "postinstall": "electron-builder install-app-deps",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.electron.json"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dayjs": "^1.11.11",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
+    "express": "^4.19.2",
+    "mongoose": "^8.4.0",
+    "node-thermal-printer": "^4.4.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.23.1",
+    "serialport": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.12",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@types/serialport": "^8.0.4",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^30.0.9",
+    "electron-builder": "^24.13.3",
+    "electron-rebuild": "^3.2.9",
+    "jsdom": "^30.0.1",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.13",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.gh.billingpos",
+    "productName": "GH Billing POS",
+    "asar": true,
+    "asarUnpack": [
+      "**/node_modules/usb/**",
+      "**/node_modules/serialport/**"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/bin/mongod.exe",
+        "to": "bin/mongod.exe"
+      },
+      {
+        "from": "resources/bin/mongodump.exe",
+        "to": "bin/mongodump.exe"
+      },
+      {
+        "from": "resources/bin/mongorestore.exe",
+        "to": "bin/mongorestore.exe"
+      },
+      {
+        "from": "assets/",
+        "to": "assets/"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "assets/icon.ico",
+      "requestedExecutionLevel": "asInvoker",
+      "artifactName": "BillingApp-Setup-${version}.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "GH Billing POS"
+    }
+  }
+}

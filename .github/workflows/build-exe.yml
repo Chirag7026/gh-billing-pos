@@ -1,0 +1,93 @@
+name: Build Ready-To-Use Windows EXE
+
+# Zero-setup pipeline: every push to main (or manual run) compiles the full
+# GH Billing POS NSIS installer on a cloud Windows runner and publishes the
+# ready-to-run .exe to Actions Artifacts + GitHub Releases. End users just
+# download and install — no Node.js, no terminal, no local compilation.
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write # required to publish GitHub Releases
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Generate app icon (if missing)
+        shell: pwsh
+        run: |
+          if (-not (Test-Path -LiteralPath "assets\icon.ico")) {
+            node scripts/generate-icon.mjs
+          }
+          Get-Item "assets\icon.ico"
+
+      - name: Download and bundle portable MongoDB binaries
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path resources\bin | Out-Null
+          Write-Host "Fetching portable mongod..."
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts/download-mongod.ps1 -Version "7.0.14"
+          Write-Host "Fetching MongoDB Database Tools..."
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts/download-mongo-tools.ps1
+          foreach ($exe in @("mongod.exe", "mongodump.exe", "mongorestore.exe")) {
+            $p = Join-Path "resources\bin" $exe
+            if (-not (Test-Path -LiteralPath $p)) { throw "Missing staged binary: $p" }
+            Get-Item $p
+          }
+          Write-Host "Embedded database binaries successfully staged."
+
+      - name: Install NPM packages
+        run: npm ci
+
+      - name: Compile main + renderer
+        run: npm run build:electron
+
+      - name: Compile renderer bundle
+        run: npm run build:renderer
+
+      - name: Compile and package standalone NSIS EXE
+        # NOTE: `--publish never` (not `-c.publish=never`, which v24 parses as
+        # a config-file path). Publishing to Releases is handled by the
+        # dedicated softprops step below.
+        run: npx electron-builder --win --x64 --publish never
+
+      - name: Show installer
+        shell: pwsh
+        run: Get-ChildItem -LiteralPath release -Filter *.exe | Format-Table Name, Length
+
+      - name: Upload finished installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GH-Billing-POS-Setup
+          path: release/*.exe
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish .exe to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          # Tag pushes (v*) release under their own tag; branch/manual builds
+          # get a per-run ci-build-N prerelease tag.
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('ci-build-{0}', github.run_number) }}
+          name: GH Billing POS — Windows installer (CI build ${{ github.run_number }})
+          prerelease: true
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: release/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
