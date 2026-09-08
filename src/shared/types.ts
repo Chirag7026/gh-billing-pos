@@ -3,20 +3,43 @@ export type PaymentType = 'Cash' | 'Debit';
 export type PricingMode = 'Wholesale' | 'Retail';
 export type LedgerGroup = 'Bank Account' | 'Sundry Creditors' | 'Sundry Debtors';
 export type BalanceType = 'Cr' | 'Dr';
+export type UserRole = 'ADMIN' | 'OPERATOR' | 'CASHIER';
+export type GstType = 'GST On Rate' | 'GST Included';
+
+export interface UserDTO {
+  _id?: string;
+  username: string;
+  role: UserRole;
+  allowedPages: string[];
+  isActive: boolean;
+  updatedAt?: string;
+}
+
+/** Canonical page-permission keys (RBAC). */
+export const PAGE_KEYS = [
+  'dashboard', 'sales-add', 'sales-display', 'purchase-add', 'purchase-display',
+  'product-add', 'product-display', 'stock-master', 'stock-adjustment',
+  'low-stock', 'barcode-print', 'sales-ledger', 'purchase-ledger',
+  'supplier-ledger', 'settings'
+] as const;
 
 export interface ProductDTO {
   _id?: string;
   name: string;
+  alias?: string;
   barcode: string;
+  group?: string;
   hsnCode?: string;
   gstRate?: number;
+  gstType?: GstType;
+  minStock?: number;
   convFactor?: number;
-  group?: string;
-  unit?: string;
-  mrp?: number;
+  openingStock?: number;
   purRate?: number;
   whRate?: number;
   rtRate?: number;
+  mrp?: number;
+  unit?: string;
   boxStock?: number;
   cloQty?: number;
   updatedAt?: string;
@@ -38,10 +61,12 @@ export interface SaleItemDTO {
   productId?: string;
   name: string;
   barcode: string;
+  alias?: string;
   pack: number;
   qty: number;
   unit?: string;
   rate: number;
+  gstAmount?: number;
   amount: number;
 }
 
@@ -87,17 +112,37 @@ export interface PurchaseDTO {
   updatedAt?: string;
 }
 
+export interface StockAdjustmentDTO {
+  _id?: string;
+  productId?: string;
+  productName: string;
+  barcode: string;
+  adjustmentType: 'ADD' | 'SUBTRACT';
+  adjustedQty: number;
+  previousQty: number;
+  newQty: number;
+  reason: string;
+  adjustedBy: string;
+  date?: string;
+}
+
 export interface AppSettings {
   mongoUri: string;
   syncEndpoint: string;
   syncToken: string;
   syncEnabled: boolean;
+  syncIntervalSec: number; // 5–300, default 10
   thermalPrinter: string;
   thermalInterface: string; // e.g. printer:POS-80 | tcp://192.168.1.50 | COM3
   labelPrinter: string;
   labelMode: 'TSPL' | 'ZPL' | 'WINDOWS';
   brandHeader: string;
-  backupPath: string; // custom backup dir (USB / OneDrive / Drive); '' = %APPDATA%/billing_pos/backups
+  backupPath: string; // Destination A override; '' = %APPDATA%/billing_pos/backups
+  backupPathB: string; // Destination B (USB / drive / share); '' = disabled
+  autoPrintReceipt: boolean;
+  autoPrintBarcode: boolean;
+  beepDurationSec: number; // item-not-found tone length
+  minStockDefault: '1' | 'convFactor';
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -110,5 +155,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
   labelPrinter: '',
   labelMode: 'TSPL',
   brandHeader: 'G H',
-  backupPath: ''
+  backupPath: '',
+  backupPathB: '',
+  syncIntervalSec: 10,
+  autoPrintReceipt: true,
+  autoPrintBarcode: false,
+  beepDurationSec: 1.5,
+  minStockDefault: '1'
 };

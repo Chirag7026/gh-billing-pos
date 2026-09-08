@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { pos, unwrap, inr } from '../lib/api';
 
 export default function SaleDisplay() {
+  const nav = useNavigate();
   const [rows, setRows] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [sel, setSel] = useState<any | null>(null);
@@ -49,6 +51,7 @@ export default function SaleDisplay() {
                 <td>{r.customerName}</td><td>{r.totalItems}</td><td className="font-mono">{inr(r.grandTotal)}</td>
                 <td className="whitespace-nowrap">
                   <button className="btn-ghost mr-1" onClick={() => open(r._id)}>View</button>
+                  <button className="btn-amber mr-1" onClick={() => nav(`/sales/add?edit=${r._id}`)}>Edit</button>
                   <button className="btn-ghost mr-1" onClick={() => reprint(r._id)}>Re-print</button>
                   <button className="btn-danger" onClick={async () => { if (confirm(`Delete bill ${r.billNo}? Stock will be restored.`)) { await unwrap(pos().sales.remove(r._id)); load(); } }}>Del</button>
                 </td>
@@ -66,8 +69,8 @@ export default function SaleDisplay() {
               <tbody>{sel.items.map((it: any, i: number) => <tr key={i}><td>{i + 1}</td><td>{it.name}<div className="text-[11px] font-mono text-slate-400">{it.barcode}</div></td><td>{it.pack}</td><td>{it.qty}</td><td>{inr(it.rate)}</td><td>{inr(it.amount)}</td></tr>)}</tbody>
             </table>
             <div className="text-right font-bold mt-2">Grand Total ₹{inr(sel.grandTotal)}</div>
-            <div className="text-xs text-slate-400 mt-1">Edit with restock: delete this bill and re-enter via Sales Add (F1) — stock auto-adjusts.</div>
-            <div className="flex gap-2 mt-3"><button className="btn-primary" onClick={() => reprint(sel._id)}>Re-print</button><button className="btn-ghost" onClick={() => setSel(null)}>Close</button></div>
+            <div className="text-xs text-slate-400 mt-1">Edit loads the bill into the Sales cart; re-saving recalculates stock differences.</div>
+            <div className="flex gap-2 mt-3"><button className="btn-primary" onClick={() => reprint(sel._id)}>Re-print</button><button className="btn-amber" onClick={() => nav(`/sales/add?edit=${sel._id}`)}>Edit in Cart</button><button className="btn-ghost" onClick={() => setSel(null)}>Close</button></div>
           </div>
         </div>
       )}

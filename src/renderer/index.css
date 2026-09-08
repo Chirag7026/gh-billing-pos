@@ -12,6 +12,25 @@ body {
 input, select, textarea {
   @apply bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-sm outline-none focus:border-emerald-500;
 }
+/* V2: strict all-caps text entry */
+input[type='text'], input:not([type]), textarea {
+  text-transform: uppercase;
+}
+/* V2: remove number spinner arrows everywhere */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+input[type='number'] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+/* V2: sales line-items grid typography */
+.sales-table, .sales-table input {
+  font-family: Arial, sans-serif !important;
+  font-size: 18px !important;
+}
 button {
   @apply text-sm;
 }

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { pos, unwrap, inr } from '../lib/api';
 
 export default function PurchaseDisplay() {
+  const nav = useNavigate();
   const [rows, setRows] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [msg, setMsg] = useState('');
@@ -21,7 +23,7 @@ export default function PurchaseDisplay() {
   }, []);
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-3">Purchase Display <span className="kbd ml-2">F4</span></h1>
+      <h1 className="text-2xl font-bold mb-3">Purchase Display <span className="kbd ml-2">F6</span></h1>
       <input placeholder="Search bill no or supplier…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-72 mb-3" autoFocus />
       {msg && <div className="text-xs text-amber-300 mb-2">{msg}</div>}
       <div className="card p-0 overflow-auto max-h-[65vh]">
@@ -33,7 +35,7 @@ export default function PurchaseDisplay() {
                 <td className="font-mono">{r.purchaseBillNo}</td><td>{new Date(r.date).toLocaleDateString('en-IN')}</td>
                 <td>{r.supplierName}</td><td>{r.paymentType}</td><td>{r.items?.length}</td>
                 <td className="font-mono">{inr(r.totalPurchaseAmount)}</td>
-                <td><button className="btn-danger" onClick={async () => { if (confirm('Delete purchase? (stock not auto-reversed)')) { await unwrap(pos().purchases.remove(r._id)); load(); } }}>Del</button></td>
+                <td><button className="btn-amber mr-1" onClick={() => nav(`/purchase/add?edit=${r._id}`)}>Edit</button><button className="btn-danger" onClick={async () => { if (confirm('Delete purchase? (stock not auto-reversed)')) { await unwrap(pos().purchases.remove(r._id)); load(); } }}>Del</button></td>
               </tr>
             ))}
           </tbody>

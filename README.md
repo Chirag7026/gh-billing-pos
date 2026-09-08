@@ -9,7 +9,7 @@ barcode stickers (TSPL/ZPL/Windows driver).
 - Electron + React (TypeScript) + Tailwind + Node.js
 - Local MongoDB `mongodb://localhost:27017/billing_pos` via Mongoose
 - `exceljs` import/export pipelines (exact header mappings from spec)
-- Background differential sync every 10s against remote REST API
+- Background differential sync on an admin-set interval (default 10s) against remote REST API
 - ESC/POS thermal + TSPL/ZPL label printing, raw Windows fallback
 
 ## Prerequisites
@@ -37,45 +37,54 @@ npm run build        # electron-builder → release/
 
 ## First Run
 
-1. Create master Admin password (setup wizard at `/login`).
+1. Create master Admin credentials at `/login` (multi-user RBAC: ADMIN/OPERATOR/CASHIER).
 2. Settings → verify MongoDB URI → Test MongoDB.
 3. Settings → select thermal + label printers; thermal interface accepts
    `printer:POS-80`, `tcp://192.168.1.50:9100`, or `COM3`.
-4. Products → Import XLSX (empty barcodes auto-sequenced) or Product Add (F5 auto-fills next code).
-5. Sales Add (F1): scanner trap auto-focused; wedge burst + Enter adds the line.
+4. Products → Import .xls (empty barcodes auto-sequenced) or Product Add (F3 auto-fills next code).
+5. Sales Add (F1): scanner trap auto-focused; wedge burst + Enter adds the line (F10 toggles REMOVE mode).
 
 ## Keyboard Map
 
-F1 Sales Add · F2 Sales Display · F3 Purchase Add · F4 Purchase Display ·
-F5 Product Add · F6 Product Display · F7 Supplier Add · F8 Supplier Display
+F1 Sales Add · F2 Sales Display · F3 Product Add · F4 Product Display ·
+F5 Purchase Add · F6 Purchase Display · F7 Supplier Add · F8 Supplier Display ·
+F9 Save & Print · F10 / Space ADD/REMOVE toggle
 
 Enter works as Tab in every form (advances + auto-selects). Exemption: the
 barcode field keeps focus on Enter — the scan resolves, the line is added or
 its quantity incremented, the field clears for the next scan.
+All text entry is auto-UPPERCASE; number spinners are removed app-wide.
 
 ## Backup & Restore
 
 - Engine: `src/main/backup.ts` using bundled `mongodump.exe`/`mongorestore.exe`
   (`resources/bin/`, stage via `scripts/download-mongo-tools.ps1`).
-- Triggers: silent daily snapshot (24h scheduler), snapshot on TitleBar ✕ exit,
-  manual button in Settings → Backup & Restore (Admin-gated).
-- Archives: `%APPDATA%/billing_pos/backups/backup_YYYY-MM-DD_HH-mm-ss.tar.gz`
-  (custom folder supported — USB / OneDrive / Drive); last 30 kept, older pruned.
+- Triggers: silent daily snapshot (24h scheduler), exit prompt
+  (Quick Backup & Exit / Exit Without Backup / Cancel), manual button in
+  Settings → Backup & Restore (Admin-gated).
+- Dual destinations: A (`%APPDATA%/billing_pos/backups/`) + optional B
+  (USB/drive/share); every snapshot writes both; last 30 kept per destination.
+- Startup integrity check offers one-click auto-restore from the newest valid snapshot.
 - Restore: pick a local snapshot or external `.tar.gz`, type RESTORE to confirm;
   sync pauses, `mongorestore --drop` runs, before/after counts verify, sync resumes.
 
-## Excel Formats
+## Excel Formats (.xls BIFF8 via SheetJS)
 
-- Products: `Product Name | Barcode | HSN Code | GST% | Conv. | Group | Unit | MRP | Pur Rate | WH Rate | Rt.Rate | Box Stock | Clo. Qty`
+- Products: `Product Name | Barcode | Alias | HSN Code | GST% | Conv. | Group | Unit | MRP | Pur Rate | WH Rate | Rt.Rate | Box Stock | Clo. Qty`
 - Customers: `Sr | Customer Name | Phone | City | Group | Opening Balance | Cr/Dr`
 - Suppliers: `Sr | Account | City | Group | Opening Balance`
 - Sales Register: `Sr. | Aud | Date | C/D | Bill No. | Account | Customer Name | City | Amount`
+- Purchase Register: `Sr. | Date | Bill No. | Supplier Name | Total Amount | Payment Type`
+- Low Stock: `Product Name | Barcode | Alias | Group | Available Qty | Minimum Stock | Unit`
+
+Wildcard search everywhere: `*`/`%` = any run, `?`/`_` = one char.
 
 ## Sync Protocol
 
-Every 10s: push docs with `updatedAt > lastSync` (cap 2000/collection) to
-`POST {endpoint}/push`, then `GET {endpoint}/pull?since=ISO`. Bearer token from
-Settings. Failures recorded on the status badge, never thrown.
+Admin-set interval (Settings, 5–300s, default 10s): push docs with
+`updatedAt > lastSync` (cap 2000/collection) to `POST {endpoint}/push`, then
+`GET {endpoint}/pull?since=ISO`. Bearer token from Settings. Failures recorded
+on the status badge, never thrown.
 
 ## Print Layouts
 
@@ -87,5 +96,5 @@ Settings. Failures recorded on the status badge, never thrown.
 ## Project Map
 
 - `src/main/` — Electron main, Mongoose models, IPC, sync engine, printers, Excel
-- `src/renderer/` — React pages (13), scanner hook, sync badge, layouts
+- `src/renderer/` — React pages (17), scanner hook, sync badge, layouts
 - `src/shared/types.ts` — DTOs shared over IPC

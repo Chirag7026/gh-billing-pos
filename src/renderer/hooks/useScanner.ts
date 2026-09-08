@@ -12,7 +12,7 @@ interface Opts {
 }
 
 /** Marker attribute for the dedicated barcode input (exempt from Enter-as-Tab). */
-export const SCANNER_ATTR = 'data-scanner-input';
+export const SCANNER_ATTR = 'data-barcode-field';
 
 function isInScannerField(el: EventTarget | null): boolean {
   return !!(el as HTMLElement)?.closest?.(`[${SCANNER_ATTR}]`);

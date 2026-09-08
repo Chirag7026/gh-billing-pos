@@ -47,11 +47,11 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
 /**
  * Exit pipeline (TitleBar ✕, after renderer-side unsaved-bill confirmation):
  * 1. Immediate differential sync flush.
- * 2. Non-blocking snapshot backup (bounded — never hangs the exit).
+ * 2. Optional snapshot backup (bounded — never hangs the exit).
  * 3. Safe embedded-mongod shutdown.
  * 4. app.quit().
  */
-async function gracefulExit(): Promise<void> {
+async function gracefulExit(withBackup = true): Promise<void> {
   if (exiting) return;
   exiting = true;
   quitting = true; // before-quit must not re-run the mongo shutdown
@@ -62,11 +62,15 @@ async function gracefulExit(): Promise<void> {
   } catch (e: any) {
     console.warn('[main] exit: sync flush failed:', e?.message);
   }
-  try {
-    const b = await withTimeout(createBackup('exit'), 120_000, 'exit snapshot');
-    console.log(`[main] exit: snapshot ${b.name} (${b.size} bytes)`);
-  } catch (e: any) {
-    console.warn('[main] exit: snapshot failed (continuing):', e?.message);
+  if (withBackup) {
+    try {
+      const b = await withTimeout(createBackup('exit'), 120_000, 'exit snapshot');
+      console.log(`[main] exit: snapshot ${b.name} (${b.size} bytes)`);
+    } catch (e: any) {
+      console.warn('[main] exit: snapshot failed (continuing):', e?.message);
+    }
+  } else {
+    console.log('[main] exit: snapshot skipped by user choice');
   }
   try {
     await stopEmbeddedMongo();
@@ -91,7 +95,7 @@ async function createWindow() {
     }
   });
 
-  registerIpc(() => mainWindow, { requestExit: () => void gracefulExit() });
+  registerIpc(() => mainWindow, { requestExit: (withBackup: boolean) => void gracefulExit(withBackup) });
 
   const sendMaxState = () => mainWindow?.webContents.send('win:maxState', mainWindow?.isMaximized() ?? false);
   mainWindow.on('maximize', sendMaxState);
@@ -126,7 +130,7 @@ if (gotLock) {
     // 2) Mongoose connection, then window + engines.
     await connectDb(getSettings().mongoUri).catch((e) => console.warn('[db]', e?.message));
     await createWindow();
-    startSyncEngine(mainWindow, 10_000);
+    startSyncEngine(mainWindow);
     startBackupScheduler(); // silent daily snapshot, every 24h
 
     app.on('activate', () => {

@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { pos, unwrap, inr, num } from '../lib/api';
 import { useScanner } from '../hooks/useScanner';
 import { setUnsaved } from '../lib/unsaved';
+import { beepNotFound } from '../lib/beep';
+import { prefs, beepSeconds } from '../lib/prefs';
 
 interface Row { key: string; productId?: string; name: string; barcode: string; qty: number; purRate: number; mrp: number; whRate: number; rtRate: number; amount: number; }
 
 export default function PurchaseAdd() {
+  const [params, setParams] = useSearchParams();
+  const [editingId, setEditingId] = useState<string | undefined>(undefined);
   const [supplierName, setSupplierName] = useState('');
   const [supplierId, setSupplierId] = useState<string | undefined>(undefined);
   const [supSearch, setSupSearch] = useState('');
@@ -30,6 +35,36 @@ export default function PurchaseAdd() {
   useEffect(() => () => setUnsaved('purchase', false), []);
   useEffect(() => {
     scanRef.current?.focus();
+    // Edit flow: ?edit=<purchaseId> loads the invoice (stock reversed on re-save).
+    const editId = params.get('edit');
+    if (editId) {
+      (async () => {
+        try {
+          const b: any = await unwrap(pos().purchases.get(editId));
+          if (b) {
+            setEditingId(b._id);
+            setBillNo(b.purchaseBillNo);
+            setDate(new Date(b.date).toISOString().slice(0, 10));
+            setSupplierId(b.supplierId);
+            setSupplierName(b.supplierName);
+            setPaymentType(b.paymentType);
+            setRows(
+              (b.items || []).map((it: any, i: number) => ({
+                key: `${it.barcode}-edit-${i}`,
+                productId: it.productId, name: it.name, barcode: it.barcode,
+                qty: num(it.qty), purRate: num(it.purRate), mrp: num(it.mrp),
+                whRate: num(it.whRate), rtRate: num(it.rtRate), amount: num(it.amount)
+              }))
+            );
+            setMsg(`Editing purchase ${b.purchaseBillNo} — re-saving reverses old stock first.`);
+            setParams({});
+          }
+        } catch (e: any) {
+          setMsg(e.message);
+        }
+      })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     if (!supSearch.trim()) {
@@ -80,6 +115,7 @@ export default function PurchaseAdd() {
         // Unknown barcode → create row shell so rates can be entered inline
         setRows((prev) => [...prev, { key: `${code}-${Date.now()}`, name: code, barcode: code, qty: 1, purRate: 0, mrp: 0, whRate: 0, rtRate: 0, amount: 0 }]);
         setMsg(`New barcode ${code}: fill name + rates inline.`);
+        beepNotFound(await beepSeconds());
       }
     } catch (e: any) {
       setMsg(e.message);
@@ -103,6 +139,19 @@ export default function PurchaseAdd() {
 
   const save = async (withLabels: boolean) => {
     setMsg('');
+    // Auto-Print Barcode toggle: plain Save routes into the label modal.
+    if (!withLabels && !labelModal) {
+      try {
+        const p = await prefs();
+        if (p.autoPrintBarcode) {
+          const m: any = {};
+          rows.forEach((r) => (m[r.key] = 1));
+          setLabelCounts(m);
+          setLabelModal(true);
+          return;
+        }
+      } catch {}
+    }
     try {
       let printLabels: any[] | undefined;
       if (withLabels) {
@@ -114,10 +163,11 @@ export default function PurchaseAdd() {
           copies: labelCounts[r.key] ?? 1
         }));
       }
-      const bill = { purchaseBillNo: billNo, date, supplierId, supplierName, paymentType, items: rows.map(({ key: _k, ...r }) => r) };
+      const bill = { _id: editingId, purchaseBillNo: billNo, date, supplierId, supplierName, paymentType, items: rows.map(({ key: _k, ...r }) => r) };
       const r: any = await unwrap(pos().purchases.save(bill, printLabels));
       setMsg(`Saved purchase ${r.bill.purchaseBillNo} · ₹${inr(r.bill.totalPurchaseAmount)}${withLabels ? ' · labels sent' : ''}`);
       setRows([]);
+      setEditingId(undefined);
       setBillNo('');
       setLabelModal(false);
     } catch (e: any) {
@@ -133,7 +183,7 @@ export default function PurchaseAdd() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-3">Purchase Add + Barcode <span className="kbd ml-2">F3</span></h1>
+      <h1 className="text-2xl font-bold mb-3">Purchase Add + Barcode <span className="kbd ml-2">F5</span></h1>
       <div className="card mb-3 grid grid-cols-2 md:grid-cols-5 gap-2 items-end">
         <label className="relative col-span-2">Supplier
           <input value={supSearch || supplierName} onChange={(e) => { setSupSearch(e.target.value); setSupplierName(e.target.value); }} placeholder="Search supplier…" />
@@ -151,7 +201,7 @@ export default function PurchaseAdd() {
       </div>
 
       <div className="card mb-3 grid md:grid-cols-2 gap-2">
-        <label>Scan barcode<input ref={scanRef} data-scanner-input value={scan} onChange={(e) => setScan(e.target.value)} className="font-mono" autoFocus /></label>
+        <label>Scan barcode<input ref={scanRef} data-barcode-field="true" value={scan} onChange={(e) => setScan(e.target.value)} className="font-mono" autoFocus /></label>
         <label className="relative">…or type name
           <input value={nameSearch} onChange={(e) => setNameSearch(e.target.value)} />
           {nameOpts.length > 0 && (

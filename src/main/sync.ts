@@ -9,7 +9,7 @@ let paused = false; // restore / shutdown windows pause the 10s interval
 let lastStatus: { ok: boolean; at: string | null; message: string } = { ok: false, at: null, message: 'Not synced yet' };
 
 export function syncStatus() {
-  return { ...lastStatus, running, paused };
+  return { ...lastStatus, running, paused, intervalMs: syncIntervalMs() };
 }
 
 async function getLastSync(key: string): Promise<Date | null> {
@@ -95,11 +95,18 @@ async function applyPull(d: any): Promise<number> {
   return n;
 }
 
-export function startSyncEngine(mainWindow: BrowserWindow | null, intervalMs = 10_000) {
+/** Admin-configurable interval, default 10s, clamped to 5–300s. */
+export function syncIntervalMs(): number {
+  const s = Math.round(Number(getSettings().syncIntervalSec) || 10);
+  return Math.min(300, Math.max(5, s)) * 1000;
+}
+
+export function startSyncEngine(mainWindow: BrowserWindow | null, intervalMs?: number) {
   stopSyncEngine();
+  const ms = intervalMs ?? syncIntervalMs();
   // Immediate first cycle (async, non-blocking)
   setImmediate(() => cycle(mainWindow));
-  timer = setInterval(() => cycle(mainWindow), intervalMs);
+  timer = setInterval(() => cycle(mainWindow), ms);
 }
 
 export function stopSyncEngine() {

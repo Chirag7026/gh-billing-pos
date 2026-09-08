@@ -4,7 +4,11 @@ import * as os from 'node:os';
 import { app } from 'electron';
 import { AppSettings, DEFAULT_SETTINGS } from '../shared/types.js';
 
-interface StoreShape { settings: AppSettings; adminHash: string | null; session: boolean; }
+interface StoreShape {
+  settings: AppSettings;
+  adminHash: string | null; // V1 legacy single-admin (auto-migrated to users)
+  session: boolean | { username: string; role: string } | null;
+}
 
 function storePath(): string {
   try {
@@ -55,9 +59,15 @@ export function setAdminHash(hash: string) {
   writeStore({ ...cur, adminHash: hash });
 }
 export function isLoggedIn(): boolean {
-  return readStore().session;
+  return !!readStore().session;
 }
-export function setSession(v: boolean) {
+export function setSession(v: boolean | { username: string; role: string } | null) {
   const cur = readStore();
   writeStore({ ...cur, session: v });
+}
+/** Active session user (null when logged out). Mongo keeps running regardless. */
+export function getSessionUser(): { username: string; role: string } | null {
+  const s = readStore().session;
+  if (s && typeof s === 'object') return s as { username: string; role: string };
+  return null;
 }

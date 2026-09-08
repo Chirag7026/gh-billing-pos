@@ -42,7 +42,7 @@ export default function SupplierDisplay() {
 
   const doExcel = async (mode: 'export' | 'import') => {
     try {
-      const xls: any = [{ name: 'Excel', extensions: ['xlsx'] }];
+      const xls: any = [{ name: 'Legacy Excel 97-2004', extensions: ['xls'] }];
       if (mode === 'export') {
         const d: any = await unwrap(pos().excel.dialog('save', xls));
         if (d.canceled) return;

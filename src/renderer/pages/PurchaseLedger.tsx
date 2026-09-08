@@ -18,6 +18,18 @@ export default function PurchaseLedger() {
     return true;
   });
   const total = filtered.reduce((a, r) => a + (Number(r.totalPurchaseAmount) || 0), 0);
+  const [msg, setMsg] = useState('');
+
+  const exportXls = async () => {
+    try {
+      const d: any = await unwrap(pos().excel.dialog('save', [{ name: 'Legacy Excel 97-2004', extensions: ['xls'] }]));
+      if (d.canceled) return;
+      const r: any = await unwrap(pos().excel.exportPurchase(d.path, supplier || undefined, from || undefined, to || undefined));
+      setMsg(`Exported ${r.count} rows (.xls) → ${r.filePath}`);
+    } catch (e: any) {
+      setMsg(e.message);
+    }
+  };
 
   return (
     <div>
@@ -27,7 +39,9 @@ export default function PurchaseLedger() {
         <label>From<input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
         <label>To<input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></label>
         <span className="text-sm ml-auto">Aggregate <b>₹{inr(total)}</b> · {filtered.length} bills</span>
+        <button className="btn-ghost" onClick={exportXls}>.xls Export</button>
       </div>
+      {msg && <div className="text-xs text-amber-300 mb-2">{msg}</div>}
       <div className="card p-0 overflow-auto max-h-[60vh]">
         <table className="tbl">
           <thead><tr><th>Bill No</th><th>Date</th><th>Supplier</th><th>Amount</th></tr></thead>

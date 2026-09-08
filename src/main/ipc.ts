@@ -2,13 +2,14 @@ import { ipcMain, dialog, BrowserWindow } from 'electron';
 import { connectDb } from './db.js';
 import { Product, Ledger, Sale, Purchase } from './models/index.js';
 import { getSettings, saveSettings } from './config.js';
-import { fmtDate, fmtTime, nextBarcode, nextBillNo, round2 } from './util.js';
-import { exportProducts, importProducts, exportLedgers, importLedgers, exportSalesRegister } from './excel.js';
+import { fmtDate, fmtTime, nextBarcode, nextBillNo, round2, wildcardToRegExp } from './util.js';
+import { exportProducts, importProducts, exportLedgers, importLedgers, exportSalesRegister, exportPurchaseRegister, exportLowStock, lowStockRows } from './excel.js';
+import { StockAdjustment } from './models/index.js';
 import { printThermal, listWindowsPrinters, buildThermalText } from './printers/thermal.js';
 import { printLabels, buildTspl, buildZpl, buildLabelHtml, LabelJob } from './printers/label.js';
 import { syncNow, syncStatus, pauseSync, resumeSync, isSyncPaused } from './sync.js';
-import { createBackup, listBackups, restoreBackup, dbCounts, backupDir } from './backup.js';
-import { needsSetup, setupAdmin, login, logout, changePassword, session } from './auth.js';
+import { createBackup, listBackups, restoreBackup, dbCounts, backupDir, backupDirs, verifyIntegrity, latestValidSnapshot } from './backup.js';
+import { needsSetup, setupAdmin, login, logout, changePassword, session, currentRole, listUsers, createUser, updateUser } from './auth.js';
 import type { SaleDTO } from '../shared/types.js';
 
 const ok = <T>(data: T) => ({ ok: true, data });
@@ -32,10 +33,17 @@ function leanId(d: any): any {
   return o;
 }
 
-export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { requestExit?: () => void }) {
+export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { requestExit?: (withBackup: boolean) => void }) {
   // ---------- settings / db / sync ----------
   ipcMain.handle('settings:get', async () => ok(getSettings()));
-  ipcMain.handle('settings:save', async (_e, patch) => ok(saveSettings(patch)));
+  ipcMain.handle('settings:save', async (_e, patch) => {
+    const s = saveSettings(patch);
+    // Apply sync interval live.
+    try {
+      resumeSync(getWindow());
+    } catch {}
+    return ok(s);
+  });
   ipcMain.handle('db:connect', async (_e, uri?: string) => {
     const r = await connectDb(uri);
     return r.ok ? ok(r) : fail(r.error);
@@ -65,10 +73,10 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
     return ok({ maximized: w.isMaximized() });
   });
   ipcMain.handle('win:isMaximized', async () => ok({ maximized: !!getWindow()?.isMaximized() }));
-  ipcMain.handle('app:exit', async () => {
-    // Renderer already confirmed unsaved bills. Run the exit pipeline:
-    // sync flush → snapshot backup → mongod stop → quit.
-    setImmediate(() => hooks?.requestExit?.());
+  ipcMain.handle('app:exit', async (_e, p?: { backup?: boolean }) => {
+    // Renderer already confirmed unsaved bills / backup choice. Run the exit
+    // pipeline: sync flush → optional snapshot backup → mongod stop → quit.
+    setImmediate(() => hooks?.requestExit?.(p?.backup !== false));
     return ok({ exiting: true });
   });
 
@@ -108,28 +116,67 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
       resumeSync(getWindow());
     }
   });
-
-  // ---------- auth ----------
-  ipcMain.handle('auth:session', async () => ok(session()));
-  ipcMain.handle('auth:needsSetup', async () => ok(await needsSetup()));
-  ipcMain.handle('auth:setup', async (_e, p: { password: string }) => {
+  ipcMain.handle('backup:dirs', async () => {
     try {
-      return ok(await setupAdmin('admin', p.password));
+      return ok(backupDirs());
     } catch (e) {
       return fail(e);
     }
   });
-  ipcMain.handle('auth:login', async (_e, p: { password: string }) => {
+  ipcMain.handle('backup:integrity', async () => ok(await verifyIntegrity()));
+  ipcMain.handle('backup:latest', async () => ok(latestValidSnapshot()));
+
+  // ---------- auth + users (RBAC) ----------
+  ipcMain.handle('auth:session', async () => ok(await session()));
+  ipcMain.handle('auth:needsSetup', async () => ok(await needsSetup()));
+  ipcMain.handle('auth:setup', async (_e, p: { username: string; password: string }) => {
     try {
-      return ok(await login(p.password));
+      return ok(await setupAdmin(p.username, p.password));
+    } catch (e) {
+      return fail(e);
+    }
+  });
+  ipcMain.handle('auth:login', async (_e, p: { username: string; password: string }) => {
+    try {
+      return ok(await login(p.username, p.password));
     } catch (e) {
       return fail(e);
     }
   });
   ipcMain.handle('auth:logout', async () => ok(logout()));
-  ipcMain.handle('auth:changePassword', async (_e, p: { oldPass: string; newPass: string }) => {
+  ipcMain.handle('auth:changePassword', async (_e, p: { username?: string; oldPass: string; newPass: string }) => {
     try {
-      return ok(await changePassword(p.oldPass, p.newPass));
+      return ok(await changePassword(p.username || '', p.oldPass, p.newPass));
+    } catch (e) {
+      return fail(e);
+    }
+  });
+  const needAdmin = () => {
+    if (currentRole() !== 'ADMIN') throw new Error('ADMIN role required');
+  };
+  ipcMain.handle('users:list', async () => {
+    try {
+      needAdmin();
+      await ensureDb();
+      return ok(await listUsers());
+    } catch (e) {
+      return fail(e);
+    }
+  });
+  ipcMain.handle('users:create', async (_e, p: any) => {
+    try {
+      needAdmin();
+      await ensureDb();
+      return ok(await createUser(p));
+    } catch (e) {
+      return fail(e);
+    }
+  });
+  ipcMain.handle('users:update', async (_e, p: { id: string; patch: any }) => {
+    try {
+      needAdmin();
+      await ensureDb();
+      return ok(await updateUser(p.id, p.patch));
     } catch (e) {
       return fail(e);
     }
@@ -140,8 +187,9 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
     try {
       await ensureDb();
       const s = (q.search || '').trim();
+      const rx = wildcardToRegExp(s);
       const filter: any = s
-        ? { $or: [{ barcode: new RegExp(escapeReg(s), 'i') }, { name: new RegExp(escapeReg(s), 'i') }] }
+        ? { $or: [{ barcode: rx }, { name: rx }, { alias: rx }] }
         : {};
       const rows = await Product.find(filter).sort({ name: 1 }).limit(q.limit || 500).lean();
       return ok(rows.map(leanId));
@@ -176,18 +224,25 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
       await ensureDb();
       if (!doc.name?.trim()) throw new Error('Product name required');
       if (!doc.barcode?.trim()) throw new Error('Barcode required');
+      const barcode = String(doc.barcode).trim();
+      const cf = Number(doc.convFactor) || 1;
+      const gstRate = [0, 5, 12, 18, 28].includes(Number(doc.gstRate)) ? Number(doc.gstRate) : 0;
       const payload = {
         name: String(doc.name).trim(),
-        barcode: String(doc.barcode).trim(),
+        alias: String(doc.alias || '').trim() || barcode,
+        barcode,
+        group: doc.group || 'GENERAL',
         hsnCode: doc.hsnCode || '',
-        gstRate: Number(doc.gstRate) || 0,
-        convFactor: Number(doc.convFactor) || 1,
-        group: doc.group || '',
-        unit: doc.unit || 'Pcs',
-        mrp: Number(doc.mrp) || 0,
+        gstRate,
+        gstType: doc.gstType === 'GST Included' ? 'GST Included' : 'GST On Rate',
+        minStock: doc.minStock !== undefined && doc.minStock !== null && doc.minStock !== '' ? Number(doc.minStock) : 1,
+        convFactor: cf,
+        openingStock: Number(doc.openingStock) || 0,
         purRate: Number(doc.purRate) || 0,
         whRate: Number(doc.whRate) || 0,
         rtRate: Number(doc.rtRate) || 0,
+        mrp: Number(doc.mrp) || 0,
+        unit: doc.unit || 'Pcs',
         boxStock: Number(doc.boxStock) || 0,
         cloQty: Number(doc.cloQty) || 0
       };
@@ -223,7 +278,7 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
       const f: any = {};
       if (q.group) f.group = q.group;
       if (q.search?.trim()) {
-        f.$and = [f.group ? { group: f.group } : {}, { accountName: new RegExp(escapeReg(q.search.trim()), 'i') }];
+        f.$and = [f.group ? { group: f.group } : {}, { accountName: wildcardToRegExp(q.search.trim()) }];
         delete f.group;
       }
       const rows = await Ledger.find(f).sort({ accountName: 1 }).limit(1000).lean();
@@ -285,8 +340,9 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
     try {
       await ensureDb();
       const s = (q.search || '').trim();
+      const rx = wildcardToRegExp(s);
       const filter: any = s
-        ? { $or: [{ billNo: new RegExp(escapeReg(s), 'i') }, { customerName: new RegExp(escapeReg(s), 'i') }] }
+        ? { $or: [{ billNo: rx }, { customerName: rx }] }
         : {};
       const rows = await Sale.find(filter).sort({ billNo: -1 }).limit(q.limit || 500).lean();
       return ok(rows.map(leanId));
@@ -321,10 +377,12 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
           productId: it.productId || undefined,
           name: it.name,
           barcode: it.barcode,
+          alias: it.alias || '',
           pack: Number(it.pack) || 1,
           qty: Number(it.qty) || 0,
           unit: it.unit || 'Pcs',
           rate: round2(it.rate),
+          gstAmount: round2(it.gstAmount || 0),
           amount: round2(it.amount)
         })),
         totalItems: b.items.length,
@@ -401,15 +459,24 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
   });
 
   // ---------- purchases ----------
-  ipcMain.handle('purchases:list', async (_e, q: { search?: string; limit?: number } = {}) => {
-    try {
+  ipcMain.handle('purchases:list', async (_e, q: { search?: string; limit?: number } = {}) => {    try {
       await ensureDb();
       const s = (q.search || '').trim();
+      const rx = wildcardToRegExp(s);
       const filter: any = s
-        ? { $or: [{ purchaseBillNo: new RegExp(escapeReg(s), 'i') }, { supplierName: new RegExp(escapeReg(s), 'i') }] }
+        ? { $or: [{ purchaseBillNo: rx }, { supplierName: rx }] }
         : {};
       const rows = await Purchase.find(filter).sort({ date: -1 }).limit(q.limit || 500).lean();
       return ok(rows.map(leanId));
+    } catch (e) {
+      return fail(e);
+    }
+  });
+  ipcMain.handle('purchases:get', async (_e, id: string) => {
+    try {
+      await ensureDb();
+      const p = await Purchase.findById(id).lean();
+      return ok(p ? leanId(p) : null);
     } catch (e) {
       return fail(e);
     }
@@ -440,8 +507,20 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
       };
       if (b.supplierId) doc.supplierId = b.supplierId;
       let saved: any;
-      if (b._id) saved = (await Purchase.findByIdAndUpdate(b._id, { $set: doc }, { new: true }).lean()) as any;
-      else saved = (await Purchase.create(doc)).toObject();
+      if (b._id) {
+        // Edit path: reverse old stock + supplier balance first.
+        const old: any = await Purchase.findById(b._id).lean();
+        if (old) {
+          for (const it of (old.items as any[]) || []) {
+            if (it.productId) await Product.findByIdAndUpdate(it.productId, { $inc: { cloQty: -(Number(it.qty) || 0) } });
+            else await Product.findOneAndUpdate({ barcode: it.barcode }, { $inc: { cloQty: -(Number(it.qty) || 0) } });
+          }
+          if (old.paymentType === 'Debit' && old.supplierId) {
+            await Ledger.findByIdAndUpdate(old.supplierId, { $inc: { currentBalance: Number(old.totalPurchaseAmount) || 0 } });
+          }
+        }
+        saved = (await Purchase.findByIdAndUpdate(b._id, { $set: doc }, { new: true }).lean()) as any;
+      } else saved = (await Purchase.create(doc)).toObject();
       // Stock increment + rate master update
       for (const it of items) {
         if (it.productId) {
@@ -533,6 +612,89 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
     try {
       await ensureDb();
       return ok(await exportSalesRegister(p.filePath, p.from, p.to));
+    } catch (e) {
+      return fail(e);
+    }
+  });
+  ipcMain.handle('excel:exportPurchase', async (_e, p: { filePath: string; supplier?: string; from?: string; to?: string }) => {
+    try {
+      await ensureDb();
+      return ok(await exportPurchaseRegister(p.filePath, p.supplier, p.from, p.to));
+    } catch (e) {
+      return fail(e);
+    }
+  });
+  ipcMain.handle('excel:exportLowStock', async (_e, filePath: string) => {
+    try {
+      await ensureDb();
+      return ok(await exportLowStock(filePath));
+    } catch (e) {
+      return fail(e);
+    }
+  });
+
+  // ---------- stock master / adjustment / low stock ----------
+  ipcMain.handle('stock:master', async () => {
+    try {
+      await ensureDb();
+      const all = await Product.find({}).sort({ name: 1 }).lean();
+      const rows = all.map((p: any) => ({
+        _id: String(p._id),
+        name: p.name,
+        barcode: p.barcode,
+        alias: p.alias || '',
+        group: p.group || '',
+        unit: p.unit || 'Pcs',
+        purRate: Number(p.purRate) || 0,
+        cloQty: Number(p.cloQty) || 0,
+        totalAmount: (Number(p.cloQty) || 0) * (Number(p.purRate) || 0)
+      }));
+      const total = rows.reduce((a: number, r: any) => a + r.totalAmount, 0);
+      return ok({ rows, total });
+    } catch (e) {
+      return fail(e);
+    }
+  });
+  ipcMain.handle('stock:low', async () => {
+    try {
+      await ensureDb();
+      return ok(await lowStockRows());
+    } catch (e) {
+      return fail(e);
+    }
+  });
+  ipcMain.handle('stock:adjust', async (_e, p: { productId: string; mode: 'ADD' | 'SUBTRACT'; qty: number; reason: string; by: string }) => {
+    try {
+      await ensureDb();
+      const prod: any = await Product.findById(p.productId);
+      if (!prod) throw new Error('Product not found');
+      const q = Math.abs(Number(p.qty) || 0);
+      if (!q) throw new Error('Quantity must be greater than 0');
+      const prev = Number(prod.cloQty) || 0;
+      const next = p.mode === 'ADD' ? prev + q : prev - q;
+      prod.cloQty = next;
+      await prod.save();
+      const rec = await StockAdjustment.create({
+        productId: prod._id,
+        productName: prod.name,
+        barcode: prod.barcode,
+        adjustmentType: p.mode,
+        adjustedQty: q,
+        previousQty: prev,
+        newQty: next,
+        reason: (p.reason || '').toUpperCase(),
+        adjustedBy: (p.by || '').toUpperCase()
+      });
+      return ok({ newQty: next, recordId: String(rec._id) });
+    } catch (e) {
+      return fail(e);
+    }
+  });
+  ipcMain.handle('stock:adjustments', async (_e, q: { limit?: number } = {}) => {
+    try {
+      await ensureDb();
+      const rows = await StockAdjustment.find({}).sort({ date: -1 }).limit(q.limit || 200).lean();
+      return ok(rows.map(leanId));
     } catch (e) {
       return fail(e);
     }

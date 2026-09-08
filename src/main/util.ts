@@ -27,3 +27,18 @@ export function nextBillNo(maxBillNo: string | null, width = 5): string {
 }
 
 export const round2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
+
+/**
+ * Wildcard search: `*`/`%` match zero or more chars, `?`/`_` match exactly
+ * one char. Everything else is regex-escaped. Case-insensitive, partial
+ * match (no ^$ anchors) so plain text still behaves like "contains".
+ */
+export function wildcardToRegExp(q: string): RegExp {
+  let out = '';
+  for (const ch of q) {
+    if (ch === '*' || ch === '%') out += '.*';
+    else if (ch === '?' || ch === '_') out += '.';
+    else out += ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+  return new RegExp(out, 'i');
+}

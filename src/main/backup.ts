@@ -29,6 +29,7 @@ let scheduler: NodeJS.Timeout | null = null;
 export interface BackupInfo {
   name: string;
   path: string;
+  dest: string; // 'A' | 'B'
   date: string; // display date parsed from filename
   size: number;
   status: 'Ready' | 'Empty' | 'Corrupt';
@@ -41,12 +42,21 @@ export interface DbCounts {
   purchases: number;
 }
 
-/** Backup root: custom Settings path or %APPDATA%/billing_pos/backups/. */
+/** Backup roots: Destination A (default %APPDATA%/billing_pos/backups/) + optional B (USB/drive/share). */
+export function backupDirs(): { tag: string; dir: string }[] {
+  const s = getSettings();
+  const customA = (s.backupPath || '').trim();
+  const customB = ((s as any).backupPathB || '').trim();
+  const defA = path.join(app.getPath('appData'), 'billing_pos', 'backups');
+  const dirs = [{ tag: 'A', dir: customA || defA }];
+  if (customB) dirs.push({ tag: 'B', dir: customB });
+  for (const d of dirs) fs.mkdirSync(d.dir, { recursive: true });
+  return dirs;
+}
+
+/** Legacy single-dir accessor (Destination A). */
 export function backupDir(): string {
-  const custom = (getSettings().backupPath || '').trim();
-  const dir = custom || path.join(app.getPath('appData'), 'billing_pos', 'backups');
-  fs.mkdirSync(dir, { recursive: true });
-  return dir;
+  return backupDirs()[0].dir;
 }
 
 /** Resolve a bundled mongo tool across packaged / dev / PATH layouts. */
@@ -111,60 +121,69 @@ export async function dbCounts(): Promise<DbCounts> {
 }
 
 /**
- * Create a snapshot: mongodump --db billing_pos → tar -czf archive.
- * Prunes to the retention window before returning.
+ * Create a snapshot: mongodump --db billing_pos → tar -czf archive,
+ * written simultaneously to Destination A and (if configured) B.
+ * Prunes each destination to the retention window before returning.
  */
-export async function createBackup(reason = 'manual'): Promise<{ file: string; name: string; size: number }> {
+export async function createBackup(
+  reason = 'manual'
+): Promise<{ file: string; name: string; size: number; dests: { tag: string; file: string; size: number }[] }> {
   if (!(await isMongoUp())) throw new Error('MongoDB is not running on 127.0.0.1:27017');
   const dump = resolveTool('mongodump');
   if (!dump) throw new Error('mongodump.exe not found (resources/bin/ or PATH). Run scripts/download-mongo-tools.ps1.');
-  const dir = backupDir();
+  const dirs = backupDirs();
   const name = `backup_${stamp()}.tar.gz`;
-  const file = path.join(dir, name);
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gh-dump-'));
   try {
     await run(dump, ['--host', MONGO_HOST, '--port', String(MONGO_PORT), '--db', 'billing_pos', '--out', tmp], 300_000);
     // Archive contains top-level billing_pos/*.bson (+ .metadata.json)
-    await run('tar', ['-czf', file, '-C', tmp, 'billing_pos'], 300_000);
-    console.log(`[backup] ${reason} snapshot → ${file}`);
+    const dumpSrc = path.join(tmp, 'billing_pos');
+    const dests: { tag: string; file: string; size: number }[] = [];
+    for (const d of dirs) {
+      const file = path.join(d.dir, name);
+      await run('tar', ['-czf', file, '-C', tmp, 'billing_pos'], 300_000);
+      dests.push({ tag: d.tag, file, size: fs.statSync(file).size });
+      pruneBackups(BACKUP_RETENTION, d.dir);
+    }
+    void dumpSrc;
+    console.log(`[backup] ${reason} snapshot → ${dests.map((d) => `${d.tag}:${d.file}`).join(' + ')}`);
+    return { file: dests[0].file, name, size: dests[0].size, dests };
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
-  pruneBackups(BACKUP_RETENTION, dir);
-  return { file, name, size: fs.statSync(file).size };
 }
 
-/** List local archives, newest first. */
+/** List local archives across all destinations, newest first. */
 export function listBackups(): BackupInfo[] {
-  let dir: string;
+  let dirs: { tag: string; dir: string }[];
   try {
-    dir = backupDir();
+    dirs = backupDirs();
   } catch {
     return [];
   }
-  let entries: string[];
-  try {
-    entries = fs.readdirSync(dir);
-  } catch {
-    return [];
-  }
-  return entries
-    .filter((n) => BACKUP_PATTERN.test(n))
-    .sort()
-    .reverse()
-    .map((name) => {
-      const p = path.join(dir, name);
+  const out: BackupInfo[] = [];
+  for (const d of dirs) {
+    let entries: string[];
+    try {
+      entries = fs.readdirSync(d.dir);
+    } catch {
+      continue;
+    }
+    for (const name of entries.filter((n) => BACKUP_PATTERN.test(n))) {
+      const p = path.join(d.dir, name);
       let size = 0;
       try {
         size = fs.statSync(p).size;
       } catch {
-        /* gone */
+        continue;
       }
-      return { name, path: p, date: displayDate(name), size, status: size > 0 ? 'Ready' : ('Empty' as const) };
-    });
+      out.push({ name, path: p, dest: d.tag, date: displayDate(name), size, status: size > 0 ? 'Ready' : ('Empty' as const) });
+    }
+  }
+  return out.sort((a, b) => (a.name < b.name ? 1 : -1));
 }
 
-/** Retain the newest `keep` archives, purge older ones. Returns removed count. */
+/** Retain the newest `keep` archives in `dir`, purge older ones. Returns removed count. */
 export function pruneBackups(keep = BACKUP_RETENTION, dir?: string): number {
   const root = dir || backupDir();
   const all = listBackups().filter((b) => path.dirname(b.path) === root);
@@ -177,8 +196,27 @@ export function pruneBackups(keep = BACKUP_RETENTION, dir?: string): number {
       /* ignore */
     }
   }
-  if (removed) console.log(`[backup] pruned ${removed} archive(s), kept ${keep}`);
+  if (removed) console.log(`[backup] pruned ${removed} archive(s) in ${root}, kept ${keep}`);
   return removed;
+}
+
+/** Newest Ready snapshot across all destinations (for startup auto-restore). */
+export function latestValidSnapshot(): BackupInfo | null {
+  return listBackups().find((b) => b.status === 'Ready') ?? null;
+}
+
+/**
+ * Startup integrity check: connect + verify core collections are readable.
+ * Returns ok:false when data files are missing/corrupt so the UI can offer
+ * auto-restore from the latest valid snapshot.
+ */
+export async function verifyIntegrity(): Promise<{ ok: boolean; counts?: any; error?: string; snapshot?: BackupInfo | null }> {
+  try {
+    const counts = await dbCounts();
+    return { ok: true, counts, snapshot: latestValidSnapshot() };
+  } catch (e: any) {
+    return { ok: false, error: String(e?.message || e), snapshot: latestValidSnapshot() };
+  }
 }
 
 function findDumpDir(extractRoot: string): string {

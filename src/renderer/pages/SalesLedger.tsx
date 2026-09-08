@@ -35,7 +35,7 @@ export default function SalesLedger() {
 
   const exportXlsx = async () => {
     try {
-      const d: any = await unwrap(pos().excel.dialog('save', [{ name: 'Excel', extensions: ['xlsx'] }]));
+      const d: any = await unwrap(pos().excel.dialog('save', [{ name: 'Legacy Excel 97-2004', extensions: ['xls'] }]));
       if (d.canceled) return;
       const f = (iso: string) => (iso ? iso.split('-').reverse().join('/') : undefined);
       const r: any = await unwrap(pos().excel.exportSales(d.path, f(from), f(to)));

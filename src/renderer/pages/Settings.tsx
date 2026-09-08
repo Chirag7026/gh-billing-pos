@@ -1,7 +1,21 @@
 import { useEffect, useState } from 'react';
 import { pos, unwrap } from '../lib/api';
+import { useSession } from '../hooks/useSession';
+import { PAGE_KEYS } from '../../shared/types';
+
+const PAGE_LABELS: Record<string, string> = {
+  dashboard: 'Dashboard', 'sales-add': 'Sales Add', 'sales-display': 'Sales Display',
+  'product-add': 'Product Add', 'product-display': 'Product Display',
+  'purchase-add': 'Purchase Add', 'purchase-display': 'Purchase Display',
+  'stock-master': 'Stock Master', 'stock-adjustment': 'Stock Adjustment',
+  'low-stock': 'Low Stock', 'barcode-print': 'Barcode Print',
+  'sales-ledger': 'Sales Ledger', 'purchase-ledger': 'Purchase Ledger',
+  'supplier-ledger': 'Supplier Ledger', settings: 'Settings'
+};
 
 export default function Settings() {
+  const { session } = useSession();
+  const isAdmin = session.role === 'ADMIN';
   const [s, setS] = useState<any>({});
   const [printers, setPrinters] = useState<string[]>([]);
   const [msg, setMsg] = useState('');
@@ -9,11 +23,13 @@ export default function Settings() {
   const [gate, setGate] = useState('');
   const [pw, setPw] = useState({ oldPass: '', newPass: '' });
   const [backups, setBackups] = useState<any[]>([]);
-  const [backupDir, setBackupDir] = useState('');
+  const [backupDirs, setBackupDirs] = useState<any[]>([]);
   const [backupBusy, setBackupBusy] = useState('');
   const [restoreTarget, setRestoreTarget] = useState<any | null>(null);
   const [restoreText, setRestoreText] = useState('');
   const [restoreResult, setRestoreResult] = useState<any | null>(null);
+  const [users, setUsers] = useState<any[]>([]);
+  const [newUser, setNewUser] = useState({ username: '', password: '', role: 'CASHIER', allowedPages: [...PAGE_KEYS] as string[] });
 
   useEffect(() => {
     (async () => {
@@ -25,23 +41,60 @@ export default function Settings() {
   const refreshBackups = async () => {
     try {
       setBackups(await unwrap<any[]>(pos().backup.list()));
-      const d: any = await unwrap(pos().backup.dir()).catch(() => null);
-      if (d?.dir) setBackupDir(d.dir);
+      setBackupDirs(await unwrap<any[]>(pos().backup.dirs()).catch(() => []));
+    } catch (e: any) {
+      setMsg(e.message);
+    }
+  };
+  const refreshUsers = async () => {
+    try {
+      setUsers(await unwrap<any[]>(pos().users.list()));
     } catch (e: any) {
       setMsg(e.message);
     }
   };
   useEffect(() => {
-    if (unlocked) refreshBackups();
-  }, [unlocked]);
+    if (unlocked) {
+      refreshBackups();
+      if (isAdmin) refreshUsers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unlocked, isAdmin]);
+
+  const save = async () => {
+    try {
+      const interval = Math.min(300, Math.max(5, Math.round(Number(s.syncIntervalSec) || 10)));
+      const next = { ...s, syncIntervalSec: interval };
+      setS(await unwrap(pos().settings.save(next)));
+      setMsg('Settings saved (sync interval applied live).');
+    } catch (e: any) {
+      setMsg(e.message);
+    }
+  };
+  const testDb = async () => {
+    try {
+      const r: any = await unwrap(pos().db.connect(s.mongoUri));
+      setMsg(`MongoDB OK: ${r.uri}`);
+    } catch (e: any) {
+      setMsg(`MongoDB failed: ${e.message}`);
+    }
+  };
+  const syncNow = async () => {
+    try {
+      const r: any = await unwrap(pos().sync.now());
+      setMsg(`Sync: ${r.message}`);
+    } catch (e: any) {
+      setMsg(e.message);
+    }
+  };
 
   const fmtMB = (b: number) => `${(Number(b) / 1048576).toFixed(1)} MB`;
 
   const manualBackup = async () => {
-    setBackupBusy('Creating snapshot…');
+    setBackupBusy('Creating snapshots (A+B)…');
     try {
       const r: any = await unwrap(pos().backup.now());
-      setMsg(`Backup created: ${r.name} (${fmtMB(r.size)}). Last 30 kept.`);
+      setMsg(`Backup created: ${r.name} (${fmtMB(r.size)}) → ${r.dests.map((d: any) => d.tag).join('+')}. Last 30 kept per destination.`);
       refreshBackups();
     } catch (e: any) {
       setMsg(`Backup failed: ${e.message}`);
@@ -87,30 +140,7 @@ export default function Settings() {
     }
   };
 
-  const save = async () => {
-    try {
-      setS(await unwrap(pos().settings.save(s)));
-      setMsg('Settings saved.');
-    } catch (e: any) {
-      setMsg(e.message);
-    }
-  };
-  const testDb = async () => {
-    try {
-      const r: any = await unwrap(pos().db.connect(s.mongoUri));
-      setMsg(`MongoDB OK: ${r.uri}`);
-    } catch (e: any) {
-      setMsg(`MongoDB failed: ${e.message}`);
-    }
-  };
-  const syncNow = async () => {
-    try {
-      const r: any = await unwrap(pos().sync.now());
-      setMsg(`Sync: ${r.message}`);
-    } catch (e: any) {
-      setMsg(e.message);
-    }
-  };
+  const togglePage = (pages: string[], k: string) => (pages.includes(k) ? pages.filter((x) => x !== k) : [...pages, k]);
 
   return (
     <div className="max-w-2xl">
@@ -121,14 +151,35 @@ export default function Settings() {
         {!unlocked ? (
           <div className="col-span-2 flex gap-2 items-end">
             <label className="flex-1">Admin password (to edit sync endpoint)<input type="password" value={gate} onChange={(e) => setGate(e.target.value)} /></label>
-            <button className="btn-ghost" onClick={async () => { try { await unwrap(pos().auth.login(gate)); setUnlocked(true); setGate(''); } catch (e: any) { setMsg(e.message); } }}>Unlock</button>
+            <button
+              className="btn-ghost"
+              onClick={async () => {
+                try {
+                  if (session.role && session.role !== 'ADMIN') throw new Error('ADMIN role required');
+                  await unwrap(pos().auth.login(session.username || 'ADMIN', gate));
+                  setUnlocked(true);
+                  setGate('');
+                } catch (e: any) {
+                  setMsg(e.message);
+                }
+              }}
+            >
+              Unlock
+            </button>
           </div>
         ) : (
           <>
             <label className="col-span-2">Remote API Sync Endpoint<input value={s.syncEndpoint || ''} onChange={(e) => setS({ ...s, syncEndpoint: e.target.value })} placeholder="https://api.example.com/pos-sync" className="font-mono" /></label>
             <label className="col-span-2">Bearer Token<input type="password" value={s.syncToken || ''} onChange={(e) => setS({ ...s, syncToken: e.target.value })} /></label>
-            <label>Sync Enabled<select value={String(!!s.syncEnabled)} onChange={(e) => setS({ ...s, syncEnabled: e.target.value === 'true' })}><option value="true">On (every 10s)</option><option value="false">Off</option></select></label>
+            <label>Sync Enabled<select value={String(!!s.syncEnabled)} onChange={(e) => setS({ ...s, syncEnabled: e.target.value === 'true' })}><option value="true">On</option><option value="false">Off</option></select></label>
+            <label>Sync Interval (sec, 5–300)<input type="number" min={5} max={300} value={s.syncIntervalSec ?? 10} onChange={(e) => setS({ ...s, syncIntervalSec: Number(e.target.value) })} /></label>
             <label>Brand Header<input value={s.brandHeader || 'G H'} onChange={(e) => setS({ ...s, brandHeader: e.target.value })} /></label>
+            <div className="flex gap-4 items-end pb-2">
+              <label className="flex items-center gap-2">Auto-Print Sales Receipt<input type="checkbox" checked={s.autoPrintReceipt !== false} onChange={(e) => setS({ ...s, autoPrintReceipt: e.target.checked })} style={{ width: 'auto' }} /></label>
+              <label className="flex items-center gap-2">Auto-Print Barcode on Purchase<input type="checkbox" checked={!!s.autoPrintBarcode} onChange={(e) => setS({ ...s, autoPrintBarcode: e.target.checked })} style={{ width: 'auto' }} /></label>
+            </div>
+            <label>Item-Not-Found Beep (sec)<input type="number" min={0.1} max={5} step={0.1} value={s.beepDurationSec ?? 1.5} onChange={(e) => setS({ ...s, beepDurationSec: Number(e.target.value) })} /></label>
+            <label>Default Min Stock<select value={s.minStockDefault || '1'} onChange={(e) => setS({ ...s, minStockDefault: e.target.value })}><option value="1">1</option><option value="convFactor">Conversion Factor</option></select></label>
           </>
         )}
         <div className="col-span-2 flex gap-2">
@@ -158,9 +209,9 @@ export default function Settings() {
 
       {unlocked ? (
         <div className="card grid grid-cols-2 gap-3 mb-3">
-          <h2 className="col-span-2 font-bold">Backup & Restore <span className="text-[11px] font-normal text-slate-400">(daily auto + on-exit snapshot, last 30 kept)</span></h2>
-          <label className="col-span-2">Backup folder (USB / OneDrive / Drive supported)<input value={s.backupPath || ''} onChange={(e) => setS({ ...s, backupPath: e.target.value })} placeholder={backupDir || '%APPDATA%/billing_pos/backups/'} className="font-mono" /></label>
-          <div className="col-span-2 text-[11px] text-slate-400">Current: <span className="font-mono">{backupDir || '…'}</span> — Save All Settings applies a new folder.</div>
+          <h2 className="col-span-2 font-bold">Backup & Restore <span className="text-[11px] font-normal text-slate-400">(dual destination A+B, last 30 kept each)</span></h2>
+          <label>Destination A (default %APPDATA%/billing_pos/backups)<input value={s.backupPath || ''} onChange={(e) => setS({ ...s, backupPath: e.target.value })} placeholder={backupDirs.find((d) => d.tag === 'A')?.dir || ''} className="font-mono" /></label>
+          <label>Destination B (USB / drive / share)<input value={s.backupPathB || ''} onChange={(e) => setS({ ...s, backupPathB: e.target.value })} placeholder="e.g. D:\GH-Backups" className="font-mono" /></label>
           <div className="col-span-2 flex gap-2 flex-wrap">
             <button className="btn-primary" onClick={manualBackup} disabled={!!backupBusy}>Create Manual Backup Now</button>
             <button className="btn-ghost" onClick={pickExternal} disabled={!!backupBusy}>Restore from external file…</button>
@@ -168,17 +219,16 @@ export default function Settings() {
           </div>
           <div className="col-span-2 card p-0 overflow-auto max-h-56">
             <table className="tbl">
-              <thead><tr><th>Date</th><th>Size</th><th>Status</th><th></th></tr></thead>
+              <thead><tr><th>Dest</th><th>Date</th><th>Size</th><th>Status</th><th></th></tr></thead>
               <tbody>
                 {backups.map((b) => (
-                  <tr key={b.path}>
-                    <td className="font-mono">{b.date}</td>
-                    <td className="font-mono">{fmtMB(b.size)}</td>
-                    <td>{b.status}</td>
+                  <tr key={b.dest + b.path}>
+                    <td className="font-mono">{b.dest}</td><td className="font-mono">{b.date}</td>
+                    <td className="font-mono">{fmtMB(b.size)}</td><td>{b.status}</td>
                     <td><button className="btn-ghost" disabled={!!backupBusy} onClick={() => { setRestoreTarget(b); setRestoreText(''); setRestoreResult(null); }}>Restore…</button></td>
                   </tr>
                 ))}
-                {!backups.length && <tr><td colSpan={4} className="text-center text-slate-500 py-4">No snapshots yet — create the first manual backup.</td></tr>}
+                {!backups.length && <tr><td colSpan={5} className="text-center text-slate-500 py-4">No snapshots yet — create the first manual backup.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -208,11 +258,53 @@ export default function Settings() {
         <div className="card mb-3 text-xs text-slate-400">Unlock with the Admin password above to manage Backup & Restore.</div>
       )}
 
+      {unlocked && isAdmin && (
+        <div className="card grid grid-cols-2 gap-3 mb-3">
+          <h2 className="col-span-2 font-bold">User Accounts & RBAC</h2>
+          <div className="col-span-2 card p-0 overflow-auto max-h-56">
+            <table className="tbl">
+              <thead><tr><th>Username</th><th>Role</th><th>Pages</th><th>Active</th><th></th></tr></thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u._id}>
+                    <td className="font-mono">{u.username}</td>
+                    <td>
+                      <select value={u.role} onChange={async (e) => { try { await unwrap(pos().users.update(u._id, { role: e.target.value })); refreshUsers(); } catch (er: any) { setMsg(er.message); } }}>
+                        <option>ADMIN</option><option>OPERATOR</option><option>CASHIER</option>
+                      </select>
+                    </td>
+                    <td className="text-[11px]">{u.role === 'ADMIN' ? 'all' : `${(u.allowedPages || []).length} pages`}</td>
+                    <td><input type="checkbox" checked={!!u.isActive} onChange={async (e) => { try { await unwrap(pos().users.update(u._id, { isActive: e.target.checked })); refreshUsers(); } catch (er: any) { setMsg(er.message); } }} style={{ width: 'auto' }} /></td>
+                    <td className="whitespace-nowrap">
+                      <button className="btn-ghost mr-1" onClick={() => { const p = prompt(`Reset password for ${u.username} (min 4 chars):`); if (p) unwrap(pos().users.update(u._id, { password: p })).then(refreshUsers).catch((er: any) => setMsg(er.message)); }}>Reset PW</button>
+                      <button className="btn-ghost" onClick={() => { const pages = prompt('Allowed pages (comma-separated keys):', (u.allowedPages || []).join(',')); if (pages !== null) unwrap(pos().users.update(u._id, { allowedPages: pages.split(',').map((x: string) => x.trim()).filter(Boolean) })).then(refreshUsers).catch((er: any) => setMsg(er.message)); }}>Pages…</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <label>New username<input value={newUser.username} onChange={(e) => setNewUser({ ...newUser, username: e.target.value.toUpperCase() })} className="font-mono" /></label>
+          <label>Password<input type="password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} /></label>
+          <label>Role<select value={newUser.role} onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}><option>ADMIN</option><option>OPERATOR</option><option>CASHIER</option></select></label>
+          <div className="flex items-end"><button className="btn-primary" onClick={async () => { try { await unwrap(pos().users.create(newUser)); setNewUser({ username: '', password: '', role: 'CASHIER', allowedPages: [...PAGE_KEYS] }); refreshUsers(); } catch (e: any) { setMsg(e.message); } }}>Create User</button></div>
+          <div className="col-span-2 text-[11px] text-slate-400">Default page set for new users:</div>
+          <div className="col-span-2 flex gap-2 flex-wrap">
+            {PAGE_KEYS.map((k) => (
+              <label key={k} className="flex items-center gap-1 text-[11px]">
+                <input type="checkbox" checked={newUser.allowedPages.includes(k)} onChange={() => setNewUser({ ...newUser, allowedPages: togglePage(newUser.allowedPages, k) })} style={{ width: 'auto' }} />
+                {PAGE_LABELS[k] || k}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="card grid grid-cols-2 gap-3 mb-3">
         <h2 className="col-span-2 font-bold">Credentials Manager</h2>
         <label>Current password<input type="password" value={pw.oldPass} onChange={(e) => setPw({ ...pw, oldPass: e.target.value })} /></label>
         <label>New password<input type="password" value={pw.newPass} onChange={(e) => setPw({ ...pw, newPass: e.target.value })} /></label>
-        <div className="col-span-2"><button className="btn-ghost" onClick={async () => { try { await unwrap(pos().auth.changePassword(pw.oldPass, pw.newPass)); setMsg('Password updated.'); setPw({ oldPass: '', newPass: '' }); } catch (e: any) { setMsg(e.message); } }}>Update Password</button></div>
+        <div className="col-span-2"><button className="btn-ghost" onClick={async () => { try { await unwrap(pos().auth.changePassword(session.username || '', pw.oldPass, pw.newPass)); setMsg('Password updated.'); setPw({ oldPass: '', newPass: '' }); } catch (e: any) { setMsg(e.message); } }}>Update Password</button></div>
       </div>
 
       <button className="btn-primary" onClick={save}>Save All Settings</button>

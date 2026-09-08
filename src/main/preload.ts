@@ -25,10 +25,16 @@ const api = {
   auth: {
     session: () => ipcRenderer.invoke('auth:session'),
     needsSetup: () => ipcRenderer.invoke('auth:needsSetup'),
-    setup: (password: string) => ipcRenderer.invoke('auth:setup', { password }),
-    login: (password: string) => ipcRenderer.invoke('auth:login', { password }),
+    setup: (username: string, password: string) => ipcRenderer.invoke('auth:setup', { username, password }),
+    login: (username: string, password: string) => ipcRenderer.invoke('auth:login', { username, password }),
     logout: () => ipcRenderer.invoke('auth:logout'),
-    changePassword: (oldPass: string, newPass: string) => ipcRenderer.invoke('auth:changePassword', { oldPass, newPass })
+    changePassword: (username: string, oldPass: string, newPass: string) =>
+      ipcRenderer.invoke('auth:changePassword', { username, oldPass, newPass })
+  },
+  users: {
+    list: () => ipcRenderer.invoke('users:list'),
+    create: (u: any) => ipcRenderer.invoke('users:create', u),
+    update: (id: string, patch: any) => ipcRenderer.invoke('users:update', { id, patch })
   },
   products: {
     list: (q?: any) => ipcRenderer.invoke('products:list', q || {}),
@@ -52,6 +58,7 @@ const api = {
   },
   purchases: {
     list: (q?: any) => ipcRenderer.invoke('purchases:list', q || {}),
+    get: (id: string) => ipcRenderer.invoke('purchases:get', id),
     save: (bill: any, printLabels?: any[]) => ipcRenderer.invoke('purchases:save', { bill, printLabels }),
     remove: (id: string) => ipcRenderer.invoke('purchases:delete', id)
   },
@@ -65,7 +72,10 @@ const api = {
     importProducts: (filePath: string) => ipcRenderer.invoke('excel:importProducts', filePath),
     exportLedgers: (filePath: string, group?: string) => ipcRenderer.invoke('excel:exportLedgers', { filePath, group }),
     importLedgers: (filePath: string) => ipcRenderer.invoke('excel:importLedgers', filePath),
-    exportSales: (filePath: string, from?: string, to?: string) => ipcRenderer.invoke('excel:exportSales', { filePath, from, to })
+    exportSales: (filePath: string, from?: string, to?: string) => ipcRenderer.invoke('excel:exportSales', { filePath, from, to }),
+    exportPurchase: (filePath: string, supplier?: string, from?: string, to?: string) =>
+      ipcRenderer.invoke('excel:exportPurchase', { filePath, supplier, from, to }),
+    exportLowStock: (filePath: string) => ipcRenderer.invoke('excel:exportLowStock', filePath)
   },
   win: {
     minimize: () => ipcRenderer.invoke('win:minimize'),
@@ -78,14 +88,23 @@ const api = {
     }
   },
   app: {
-    exit: () => ipcRenderer.invoke('app:exit')
+    exit: (backup = true) => ipcRenderer.invoke('app:exit', { backup })
   },
   backup: {
     dir: () => ipcRenderer.invoke('backup:dir'),
+    dirs: () => ipcRenderer.invoke('backup:dirs'),
     list: () => ipcRenderer.invoke('backup:list'),
     now: () => ipcRenderer.invoke('backup:now'),
     counts: () => ipcRenderer.invoke('backup:counts'),
+    integrity: () => ipcRenderer.invoke('backup:integrity'),
+    latest: () => ipcRenderer.invoke('backup:latest'),
     restore: (archivePath: string) => ipcRenderer.invoke('backup:restore', archivePath)
+  },
+  stock: {
+    master: () => ipcRenderer.invoke('stock:master'),
+    low: () => ipcRenderer.invoke('stock:low'),
+    adjust: (p: any) => ipcRenderer.invoke('stock:adjust', p),
+    adjustments: (limit?: number) => ipcRenderer.invoke('stock:adjustments', { limit })
   }
 };
 

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { pos, unwrap, inr } from '../lib/api';
-
 export default function SupplierLedger() {
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [sel, setSel] = useState('');
@@ -25,6 +24,18 @@ export default function SupplierLedger() {
   const debit = invoices.reduce((a, r) => a + (Number(r.totalPurchaseAmount) || 0), 0);
   const opening = Number(account?.openingBalance) || 0;
   const closing = (Number(account?.currentBalance) || 0) || opening;
+  const [msg, setMsg] = useState('');
+
+  const exportXls = async () => {
+    try {
+      const d: any = await unwrap(pos().excel.dialog('save', [{ name: 'Legacy Excel 97-2004', extensions: ['xls'] }]));
+      if (d.canceled) return;
+      const r: any = await unwrap(pos().excel.exportPurchase(d.path, account?.accountName || undefined));
+      setMsg(`Exported ${r.count} rows (.xls) → ${r.filePath}`);
+    } catch (e: any) {
+      setMsg(e.message);
+    }
+  };
 
   return (
     <div>
@@ -32,7 +43,9 @@ export default function SupplierLedger() {
       <div className="flex gap-2 mb-3 items-end">
         <label>Supplier<select value={sel} onChange={(e) => setSel(e.target.value)} className="w-72">{suppliers.map((s) => <option key={s._id} value={s._id}>{s.accountName} · {s.city}</option>)}</select></label>
         {account && <span className="text-sm ml-auto">Opening ₹{inr(opening)} {account.balanceType} · Debits ₹{inr(debit)} · Closing ₹{inr(closing)}</span>}
+        <button className="btn-ghost" onClick={exportXls}>.xls Export</button>
       </div>
+      {msg && <div className="text-xs text-amber-300 mb-2">{msg}</div>}
       <div className="card p-0 overflow-auto max-h-[60vh]">
         <table className="tbl">
           <thead><tr><th>Date</th><th>Bill</th><th>Debit</th><th>Credit</th><th>Running</th></tr></thead>

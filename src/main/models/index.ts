@@ -1,20 +1,39 @@
 import { Schema, model, models, Types } from 'mongoose';
 
+const UserSchema = new Schema(
+  {
+    username: { type: String, required: true, unique: true, index: true, trim: true, uppercase: true },
+    passwordHash: { type: String, required: true },
+    role: { type: String, enum: ['ADMIN', 'OPERATOR', 'CASHIER'], default: 'CASHIER', index: true },
+    allowedPages: { type: [String], default: [] },
+    isActive: { type: Boolean, default: true }
+  },
+  { timestamps: { createdAt: false, updatedAt: true } }
+);
+UserSchema.index({ updatedAt: 1 });
+export const User = models.User || model('User', UserSchema);
+
 const ProductSchema = new Schema(
   {
+    // V2 15-field order: name, alias, barcode, group, hsnCode, gstRate,
+    // gstType, minStock, convFactor, openingStock, purRate, whRate, rtRate, mrp, unit
     name: { type: String, required: true, index: true, trim: true },
+    alias: { type: String, default: '', index: true, trim: true },
     barcode: { type: String, required: true, unique: true, index: true, trim: true },
+    group: { type: String, default: 'GENERAL', index: true },
     hsnCode: { type: String, default: '' },
     gstRate: { type: Number, default: 0 },
+    gstType: { type: String, enum: ['GST On Rate', 'GST Included'], default: 'GST On Rate' },
+    minStock: { type: Number, default: 1 },
     convFactor: { type: Number, default: 1 },
-    group: { type: String, default: '', index: true },
-    unit: { type: String, default: 'Pcs' },
-    mrp: { type: Number, default: 0 },
+    openingStock: { type: Number, default: 0 },
     purRate: { type: Number, default: 0 },
     whRate: { type: Number, default: 0 },
     rtRate: { type: Number, default: 0 },
+    mrp: { type: Number, default: 0 },
+    unit: { type: String, default: 'Pcs' },
     boxStock: { type: Number, default: 0 },
-    cloQty: { type: Number, default: 0 }
+    cloQty: { type: Number, default: 0 } // closing stock; zero/negative permitted
   },
   { timestamps: { createdAt: false, updatedAt: true } }
 );
@@ -41,10 +60,12 @@ const SaleItem = new Schema(
     productId: { type: Types.ObjectId, ref: 'Product' },
     name: String,
     barcode: String,
+    alias: String,
     pack: Number,
     qty: Number,
     unit: String,
     rate: Number,
+    gstAmount: Number,
     amount: Number
   },
   { _id: false }
@@ -104,3 +125,21 @@ const SyncStateSchema = new Schema({
   lastSyncAt: { type: Date, default: null }
 });
 export const SyncState = models.SyncState || model('SyncState', SyncStateSchema);
+
+const StockAdjustmentSchema = new Schema(
+  {
+    productId: { type: Types.ObjectId, ref: 'Product', index: true },
+    productName: { type: String, index: true },
+    barcode: { type: String, index: true },
+    adjustmentType: { type: String, enum: ['ADD', 'SUBTRACT'], required: true },
+    adjustedQty: { type: Number, required: true },
+    previousQty: { type: Number, required: true },
+    newQty: { type: Number, required: true },
+    reason: { type: String, default: '' },
+    adjustedBy: { type: String, default: '' },
+    date: { type: Date, default: Date.now, index: true }
+  },
+  { timestamps: { createdAt: false, updatedAt: true } }
+);
+export const StockAdjustment =
+  models.StockAdjustment || model('StockAdjustment', StockAdjustmentSchema);
