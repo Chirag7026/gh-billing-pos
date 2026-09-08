@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login — Golden Heera POS</title>
+<link rel="stylesheet" href="styles.css">
+<script src="chrome.js"></script>
+</head>
+<body data-page="bare">
+<div class="bare-wrap">
+  <div class="card w-full max-w-sm">
+    <div class="text-2xl font-extrabold text-center">G H</div>
+    <div class="text-center text-sm text-slate-400 mb-4" id="subtitle">Golden Heera POS — sign in (MongoDB keeps running)</div>
+    <label class="lbl">Username
+      <input type="text" class="mono" value="ADMIN" autofocus id="user">
+    </label>
+    <label class="lbl mt-2" style="display:block">Password
+      <input type="password" id="pass">
+    </label>
+    <label class="lbl mt-2" style="display:none" id="confirm-wrap">Confirm
+      <input type="password" id="confirm">
+    </label>
+    <button class="btn btn-primary w-full mt-3" id="go" onclick="toast('Login successful (demo) — opening Dashboard…');setTimeout(function(){location.href='dashboard.html'},700)">Login / Switch User</button>
+    <div class="text-sm text-amber-300 mt-2" id="msg" hidden></div>
+    <div class="text-center mt-3">
+      <a href="#" id="toggle-mode" class="text-xs text-slate-400" style="text-decoration:underline">Preview first-run setup instead</a>
+      <span class="text-xs text-slate-500"> · </span>
+      <a href="index.html" class="text-xs text-slate-400" style="text-decoration:underline">All pages</a>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var setup = false;
+  var sub = document.getElementById('subtitle'), go = document.getElementById('go'),
+      cw = document.getElementById('confirm-wrap'), link = document.getElementById('toggle-mode');
+  link.addEventListener('click', function (e) {
+    e.preventDefault();
+    setup = !setup;
+    sub.textContent = setup ? 'First-run setup — create master Admin credentials' : 'Golden Heera POS — sign in (MongoDB keeps running)';
+    go.textContent = setup ? 'Create Admin' : 'Login / Switch User';
+    cw.style.display = setup ? 'block' : 'none';
+    link.textContent = setup ? 'Preview sign-in instead' : 'Preview first-run setup instead';
+  });
+  go.addEventListener('click', function () {
+    if (setup) {
+      var p = document.getElementById('pass').value, c = document.getElementById('confirm').value;
+      var m = document.getElementById('msg');
+      if (p !== c) { m.textContent = 'Passwords do not match'; m.hidden = false; return; }
+      m.hidden = true;
+    }
+  });
+  document.querySelectorAll('input').forEach(function (i) {
+    i.addEventListener('keydown', function (e) { if (e.key === 'Enter') go.click(); });
+  });
+})();
+</script>
+</body>
+</html>

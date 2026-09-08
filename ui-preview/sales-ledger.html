@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Ledger — Golden Heera POS</title>
+<link rel="stylesheet" href="styles.css">
+<script src="chrome.js"></script>
+</head>
+<body data-page="sales-ledger">
+<main class="page">
+  <h1 class="ptitle">Sales Ledger</h1>
+  <div class="flex gap-2 mb-3 items-end flex-wrap">
+    <label class="lbl">From<input type="date" value="2026-09-01"></label>
+    <label class="lbl">To<input type="date" value="2026-09-09"></label>
+    <button class="btn btn-ghost" onclick="toast('Exported 8 rows → C:\\GH-Backups\\sales-register.xls (demo)')">Excel Export</button>
+    <span class="text-sm ml-auto">Gross <b>₹8,681.50</b> · Cash <b>₹2,475.00</b> · Debit <b>₹6,206.50</b> · Net <b>₹8,681.50</b></span>
+  </div>
+  <div class="card p-0 overflow-auto max-h-60vh">
+    <table class="tbl">
+      <thead><tr><th>Sr.</th><th>Date</th><th>C/D</th><th>Bill No.</th><th>Customer</th><th>Amount</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>09/09/2026</td><td>C</td><td class="mono">1041</td><td>12345678 CASH</td><td class="mono">₹1,240.00</td></tr>
+        <tr><td>2</td><td>09/09/2026</td><td>D</td><td class="mono">1040</td><td>RAMESH KUMAR</td><td class="mono">₹486.50</td></tr>
+        <tr><td>3</td><td>08/09/2026</td><td>C</td><td class="mono">1039</td><td>12345678 CASH</td><td class="mono">₹310.00</td></tr>
+        <tr><td>4</td><td>08/09/2026</td><td>D</td><td class="mono">1038</td><td>SURESH TRADERS</td><td class="mono">₹5,720.00</td></tr>
+        <tr><td>5</td><td>07/09/2026</td><td>C</td><td class="mono">1037</td><td>12345678 CASH</td><td class="mono">₹925.00</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+</body>
+</html>

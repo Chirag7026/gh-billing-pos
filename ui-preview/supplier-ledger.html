@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supplier Ledger — Golden Heera POS</title>
+<link rel="stylesheet" href="styles.css">
+<script src="chrome.js"></script>
+</head>
+<body data-page="supplier-ledger">
+<main class="page">
+  <h1 class="ptitle">Supplier Ledger</h1>
+  <div class="flex gap-2 mb-3 items-end">
+    <label class="lbl">Supplier
+      <select class="w-72"><option>ABC TRADERS · JAIPUR</option><option>SHREE BALAJI AGENCIES · SIKAR</option><option>KHEMKA DISTRIBUTORS · JAIPUR</option></select>
+    </label>
+    <span class="text-sm ml-auto">Opening ₹10,000.00 Dr · Debits ₹6,550.00 · Closing ₹6,550.00</span>
+    <button class="btn btn-ghost" onclick="toast('Exported 3 rows (.xls) → C:\\GH-Backups\\supplier-ledger.xls (demo)')">.xls Export</button>
+  </div>
+  <div class="card p-0 overflow-auto max-h-60vh">
+    <table class="tbl">
+      <thead><tr><th>Date</th><th>Bill</th><th>Debit</th><th>Credit</th><th>Running</th></tr></thead>
+      <tbody>
+        <tr><td colspan="3">Opening Balance (Dr)</td><td></td><td class="mono">₹10,000.00</td></tr>
+        <tr><td>05/09/2026</td><td class="mono">SUP-2207</td><td class="mono">₹2,110.00</td><td></td><td></td></tr>
+        <tr><td>09/09/2026</td><td class="mono">SUP-2210</td><td class="mono">₹4,440.00</td><td></td><td></td></tr>
+        <tr><td colspan="4" class="font-bold">Closing Balance</td><td class="mono font-bold">₹6,550.00</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+</body>
+</html>

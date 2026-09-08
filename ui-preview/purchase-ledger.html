@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Purchase Ledger — Golden Heera POS</title>
+<link rel="stylesheet" href="styles.css">
+<script src="chrome.js"></script>
+</head>
+<body data-page="purchase-ledger">
+<main class="page">
+  <h1 class="ptitle">Purchase Ledger</h1>
+  <div class="flex gap-2 mb-3 items-end flex-wrap">
+    <label class="lbl">Supplier<input type="text" placeholder="Filter supplier…" id="f" style="width:220px"></label>
+    <label class="lbl">From<input type="date" value="2026-09-01"></label>
+    <label class="lbl">To<input type="date" value="2026-09-09"></label>
+    <span class="text-sm ml-auto">Aggregate <b>₹26,720.50</b> · 4 bills</span>
+    <button class="btn btn-ghost" onclick="toast('Exported 4 rows (.xls) → C:\\GH-Backups\\purchase-register.xls (demo)')">.xls Export</button>
+  </div>
+  <div class="card p-0 overflow-auto max-h-60vh">
+    <table class="tbl" id="pl">
+      <thead><tr><th>Bill No</th><th>Date</th><th>Supplier</th><th>Amount</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">SUP-2210</td><td>09/09/2026</td><td>ABC TRADERS</td><td class="mono">₹4,440.00</td></tr>
+        <tr><td class="mono">SUP-2209</td><td>08/09/2026</td><td>SHREE BALAJI AGENCIES</td><td class="mono">₹12,850.00</td></tr>
+        <tr><td class="mono">SUP-2208</td><td>07/09/2026</td><td>KHEMKA DISTRIBUTORS</td><td class="mono">₹7,320.50</td></tr>
+        <tr><td class="mono">SUP-2207</td><td>05/09/2026</td><td>ABC TRADERS</td><td class="mono">₹2,110.00</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+<script>
+document.getElementById('f').addEventListener('input', function () {
+  var q = this.value.trim().toUpperCase();
+  document.querySelectorAll('#pl tbody tr').forEach(function (r) {
+    r.style.display = !q || r.textContent.toUpperCase().indexOf(q) > -1 ? '' : 'none';
+  });
+});
+</script>
+</body>
+</html>

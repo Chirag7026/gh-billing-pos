@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Purchase Display — Golden Heera POS</title>
+<link rel="stylesheet" href="styles.css">
+<script src="chrome.js"></script>
+</head>
+<body data-page="purchase-display">
+<main class="page">
+  <h1 class="ptitle">Purchase Display <span class="kbd ml-2">F6</span></h1>
+  <input type="text" placeholder="Search bill no or supplier…" class="w-72 mb-3" autofocus id="q">
+  <div class="card p-0 overflow-auto max-h-65vh">
+    <table class="tbl" id="pt">
+      <thead><tr><th>Bill No</th><th>Date</th><th>Supplier</th><th>C/D</th><th>Items</th><th>Total</th><th></th></tr></thead>
+      <tbody>
+        <tr><td class="mono">SUP-2210</td><td>09/09/2026</td><td>ABC TRADERS</td><td>Cash</td><td>3</td><td class="mono">₹4,440.00</td><td class="whitespace-nowrap"><button class="btn btn-amber mr-1" onclick="location.href='purchase-add.html'">Edit</button><button class="btn btn-danger" onclick="toast('Delete purchase? (stock not auto-reversed) (demo)')">Del</button></td></tr>
+        <tr><td class="mono">SUP-2209</td><td>08/09/2026</td><td>SHREE BALAJI AGENCIES</td><td>Debit</td><td>6</td><td class="mono">₹12,850.00</td><td class="whitespace-nowrap"><button class="btn btn-amber mr-1" onclick="location.href='purchase-add.html'">Edit</button><button class="btn btn-danger" onclick="toast('Delete purchase? (stock not auto-reversed) (demo)')">Del</button></td></tr>
+        <tr><td class="mono">SUP-2208</td><td>07/09/2026</td><td>KHEMKA DISTRIBUTORS</td><td>Cash</td><td>4</td><td class="mono">₹7,320.50</td><td class="whitespace-nowrap"><button class="btn btn-amber mr-1" onclick="location.href='purchase-add.html'">Edit</button><button class="btn btn-danger" onclick="toast('Delete purchase? (stock not auto-reversed) (demo)')">Del</button></td></tr>
+        <tr><td class="mono">SUP-2207</td><td>05/09/2026</td><td>ABC TRADERS</td><td>Debit</td><td>2</td><td class="mono">₹2,110.00</td><td class="whitespace-nowrap"><button class="btn btn-amber mr-1" onclick="location.href='purchase-add.html'">Edit</button><button class="btn btn-danger" onclick="toast('Delete purchase? (stock not auto-reversed) (demo)')">Del</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+<script>
+document.getElementById('q').addEventListener('input', function () {
+  var q = this.value.trim().toUpperCase();
+  document.querySelectorAll('#pt tbody tr').forEach(function (r) {
+    r.style.display = !q || r.textContent.toUpperCase().indexOf(q) > -1 ? '' : 'none';
+  });
+});
+</script>
+</body>
+</html>

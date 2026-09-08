@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supplier / Ledger Add — Golden Heera POS</title>
+<link rel="stylesheet" href="styles.css">
+<script src="chrome.js"></script>
+</head>
+<body data-page="supplier-add">
+<main class="page">
+  <div class="max-w-xl">
+    <h1 class="ptitle">Supplier / Ledger Add <span class="kbd ml-2">F7</span></h1>
+    <div class="card grid grid-cols-2 gap-3">
+      <label class="lbl col-span-2">Account Name*<input type="text" autofocus></label>
+      <label class="lbl">Group<select><option>Bank Account</option><option selected>Sundry Creditors</option><option>Sundry Debtors</option></select></label>
+      <label class="lbl">City<input type="text"></label>
+      <label class="lbl">Phone<input type="text"></label>
+      <div class="flex gap-2 items-end">
+        <label class="lbl flex-1">Opening Balance<input type="number" value="0"></label>
+        <select style="width:76px" title="Dr/Cr"><option selected>Dr</option><option>Cr</option></select>
+      </div>
+      <div class="col-span-2 flex gap-2">
+        <button class="btn btn-primary" onclick="toast('Saved. (demo)')">Save</button>
+        <button class="btn btn-ghost" onclick="location.href='supplier-display.html'">Go to Display (F8)</button>
+      </div>
+    </div>
+  </div>
+</main>
+</body>
+</html>

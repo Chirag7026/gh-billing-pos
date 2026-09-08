@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Display — Golden Heera POS</title>
+<link rel="stylesheet" href="styles.css">
+<script src="chrome.js"></script>
+</head>
+<body data-page="product-display">
+<main class="page">
+  <h1 class="ptitle">Product Display <span class="kbd ml-2">F4</span></h1>
+  <div class="flex gap-2 mb-3 flex-wrap">
+    <input type="text" placeholder="Wildcard search: name, alias, barcode (* ? %)…" class="w-72 mono" autofocus id="q">
+    <button class="btn btn-ghost" onclick="toast('Exported 6 products (.xls) → C:\\GH-Backups\\products.xls (demo)')">Export .xls</button>
+    <button class="btn btn-ghost" onclick="toast('Imported/upserted 6 · 0 errors (demo)')">Import .xls</button>
+    <span class="text-xs text-slate-400 ml-auto" id="count">6 rows</span>
+  </div>
+  <div class="card p-0 overflow-auto max-h-65vh">
+    <table class="tbl" id="pt">
+      <thead><tr><th>Barcode</th><th>Name</th><th>Alias</th><th>Unit</th><th>MRP</th><th>Pur</th><th>WH</th><th>Rt</th><th>Conv</th><th>Clo.Qty</th><th></th></tr></thead>
+      <tbody>
+        <tr><td class="mono">1001</td><td>TATA SALT 1KG</td><td class="mono">1001</td><td>Pcs</td><td>₹28.00</td><td>₹22.00</td><td>₹25.00</td><td>₹28.00</td><td>1</td><td>142</td><td class="whitespace-nowrap"><button class="btn btn-ghost mr-1" onclick="openEdit('1001')">Edit</button><button class="btn btn-danger" onclick="toast('Delete TATA SALT 1KG? (demo)')">Del</button></td></tr>
+        <tr><td class="mono">1002</td><td>AASHIRVAAD ATTA 5KG</td><td class="mono">1002</td><td>Pcs</td><td>₹228.00</td><td>₹190.00</td><td>₹205.00</td><td>₹215.00</td><td>1</td><td>64</td><td class="whitespace-nowrap"><button class="btn btn-ghost mr-1" onclick="openEdit('1002')">Edit</button><button class="btn btn-danger" onclick="toast('Delete AASHIRVAAD ATTA 5KG? (demo)')">Del</button></td></tr>
+        <tr><td class="mono">1005</td><td>FORTUNE MUSTARD OIL 1L</td><td class="mono">1005</td><td>Pcs</td><td>₹210.00</td><td>₹175.00</td><td>₹190.00</td><td>₹198.00</td><td>1</td><td>48</td><td class="whitespace-nowrap"><button class="btn btn-ghost mr-1" onclick="openEdit('1005')">Edit</button><button class="btn btn-danger" onclick="toast('Delete FORTUNE MUSTARD OIL 1L? (demo)')">Del</button></td></tr>
+        <tr><td class="mono">1007</td><td>PARLE-G 200G</td><td class="mono">1007</td><td>Box</td><td>₹10.00</td><td>₹8.20</td><td>₹9.00</td><td>₹10.00</td><td>12</td><td>360</td><td class="whitespace-nowrap"><button class="btn btn-ghost mr-1" onclick="openEdit('1007')">Edit</button><button class="btn btn-danger" onclick="toast('Delete PARLE-G 200G? (demo)')">Del</button></td></tr>
+        <tr><td class="mono">1011</td><td>SURF EXCEL 1KG</td><td class="mono">1011</td><td>Pcs</td><td>₹118.00</td><td>₹96.00</td><td>₹106.00</td><td>₹112.00</td><td>1</td><td>35</td><td class="whitespace-nowrap"><button class="btn btn-ghost mr-1" onclick="openEdit('1011')">Edit</button><button class="btn btn-danger" onclick="toast('Delete SURF EXCEL 1KG? (demo)')">Del</button></td></tr>
+        <tr><td class="mono">1015</td><td>TATA TEA GOLD 250G</td><td class="mono">1015</td><td>Pcs</td><td>₹140.00</td><td>₹118.00</td><td>₹128.00</td><td>₹135.00</td><td>1</td><td>52</td><td class="whitespace-nowrap"><button class="btn btn-ghost mr-1" onclick="openEdit('1015')">Edit</button><button class="btn btn-danger" onclick="toast('Delete TATA TEA GOLD 250G? (demo)')">Del</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="modal-overlay" id="edit-modal" hidden>
+    <div class="card w-full max-w-2xl grid grid-cols-3 gap-2 max-h-90vh overflow-auto">
+      <h2 class="font-bold col-span-3" id="edit-title">Edit — 1001</h2>
+      <label class="lbl">name<input type="text" value="TATA SALT 1KG"></label>
+      <label class="lbl">alias<input type="text" value="1001"></label>
+      <label class="lbl">barcode<input type="text" value="1001"></label>
+      <label class="lbl">group<input type="text" value="GENERAL"></label>
+      <label class="lbl">hsnCode<input type="text" value="2501"></label>
+      <label class="lbl">gstType<input type="text" value="GST On Rate"></label>
+      <label class="lbl">unit<input type="text" value="Pcs"></label>
+      <label class="lbl">gstRate<input type="number" value="0"></label>
+      <label class="lbl">minStock<input type="number" value="10"></label>
+      <label class="lbl">convFactor<input type="number" value="1"></label>
+      <label class="lbl">openingStock<input type="number" value="0"></label>
+      <label class="lbl">mrp<input type="number" value="28"></label>
+      <label class="lbl">purRate<input type="number" value="22"></label>
+      <label class="lbl">whRate<input type="number" value="25"></label>
+      <label class="lbl">rtRate<input type="number" value="28"></label>
+      <label class="lbl">boxStock<input type="number" value="0"></label>
+      <label class="lbl">cloQty<input type="number" value="142"></label>
+      <div class="col-span-3 flex gap-2">
+        <button class="btn btn-primary" onclick="document.getElementById('edit-modal').hidden=true;toast('Product saved. (demo)')">Save</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('edit-modal').hidden=true">Close</button>
+      </div>
+    </div>
+  </div>
+</main>
+<script>
+function openEdit(code) {
+  document.getElementById('edit-title').textContent = 'Edit — ' + code;
+  document.getElementById('edit-modal').hidden = false;
+}
+document.getElementById('q').addEventListener('input', function () {
+  var q = this.value.trim().toUpperCase().replace(/\*/g, '').replace(/%/g, '');
+  var n = 0;
+  document.querySelectorAll('#pt tbody tr').forEach(function (r) {
+    var show = !q || r.textContent.toUpperCase().indexOf(q) > -1;
+    r.style.display = show ? '' : 'none';
+    if (show) n++;
+  });
+  document.getElementById('count').textContent = n + ' rows';
+});
+</script>
+</body>
+</html>

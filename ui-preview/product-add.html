@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Add — Golden Heera POS</title>
+<link rel="stylesheet" href="styles.css">
+<script src="chrome.js"></script>
+</head>
+<body data-page="product-add">
+<main class="page">
+  <div class="max-w-2xl">
+    <h1 class="ptitle">Product Add <span class="kbd ml-2">F3</span></h1>
+    <div class="card grid grid-cols-3 gap-3">
+      <label class="lbl">1 · Name*<input type="text" autofocus value="TATA SALT 1KG" id="p-name"></label>
+      <label class="lbl">2 · Alias<input type="text" placeholder="defaults to barcode" value="1001"></label>
+      <label class="lbl">3 · Barcode*<input type="text" class="mono" value="1001"></label>
+      <label class="lbl">4 · Group<input type="text" value="GENERAL"></label>
+      <label class="lbl">5 · HSN<input type="text" id="p-hsn"></label>
+      <label class="lbl">6 · GST %<select id="p-gst"><option selected>0</option><option>5</option><option>12</option><option>18</option><option>28</option></select></label>
+      <label class="lbl">7 · GST Type<select><option selected>GST On Rate</option><option>GST Included</option></select></label>
+      <label class="lbl">8 · Min Stock<input type="number" value="1"></label>
+      <label class="lbl">9 · Conv. Factor<input type="number" value="1" id="p-conv"></label>
+      <label class="lbl">10 · Opening Stock<input type="number" value="0" id="p-open"></label>
+      <label class="lbl">11 · Pur Rate<input type="number" value="0" id="p-pur"></label>
+      <label class="lbl">12 · WH Rate<input type="number" value="0"></label>
+      <label class="lbl">13 · Rt Rate<input type="number" value="0"></label>
+      <label class="lbl">14 · MRP<input type="number" value="0"></label>
+      <label class="lbl">15 · Unit<select><option selected>Pcs</option><option>Box</option><option>Kg</option><option>Pack</option></select></label>
+      <div class="col-span-3 grid grid-cols-2 gap-3 strip">
+        <div>Total Qty = Conv × Opening<b class="ml-2 text-emerald-300" id="t-qty">0.00</b></div>
+        <div>Total Amount = Qty × Pur Rate<b class="ml-2 text-emerald-300" id="t-amt">₹ 0.00</b></div>
+      </div>
+      <div class="col-span-3 flex gap-2">
+        <button class="btn btn-primary" onclick="toast('Saved. Next barcode 1008 (demo)')">Save &amp; New</button>
+        <button class="btn btn-ghost" onclick="location.href='product-display.html'">Save → Display</button>
+      </div>
+    </div>
+  </div>
+</main>
+<script>
+(function () {
+  function calc() {
+    var conv = parseFloat(document.getElementById('p-conv').value) || 0,
+        open = parseFloat(document.getElementById('p-open').value) || 0,
+        pur = parseFloat(document.getElementById('p-pur').value) || 0,
+        qty = conv * open;
+    document.getElementById('t-qty').textContent = qty.toFixed(2);
+    document.getElementById('t-amt').textContent = '₹ ' + (qty * pur).toFixed(2);
+  }
+  ['p-conv', 'p-open', 'p-pur'].forEach(function (id) {
+    document.getElementById(id).addEventListener('input', calc);
+  });
+})();
+</script>
+</body>
+</html>

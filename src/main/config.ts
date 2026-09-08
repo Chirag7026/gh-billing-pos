@@ -18,13 +18,27 @@ function storePath(): string {
   }
 }
 
+function normalizeSession(s: any): boolean | { username: string; role: string } | null {
+  // Preserve the {username, role} object (V2 multi-user). Legacy V1 stored a
+  // bare boolean: true means "the single old admin is logged in".
+  if (s && typeof s === 'object' && typeof (s as any).username === 'string') {
+    return { username: (s as any).username, role: (s as any).role || 'ADMIN' };
+  }
+  if (s === true) return { username: 'ADMIN', role: 'ADMIN' };
+  return null;
+}
+
 function readStore(): StoreShape {
-  const fb: StoreShape = { settings: DEFAULT_SETTINGS, adminHash: null, session: false };
+  const fb: StoreShape = { settings: DEFAULT_SETTINGS, adminHash: null, session: null };
   try {
     const p = storePath();
     if (!fs.existsSync(p)) return fb;
     const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
-    return { settings: { ...DEFAULT_SETTINGS, ...(raw.settings || {}) }, adminHash: raw.adminHash ?? null, session: !!raw.session };
+    return {
+      settings: { ...DEFAULT_SETTINGS, ...(raw.settings || {}) },
+      adminHash: raw.adminHash ?? null,
+      session: normalizeSession(raw.session)
+    };
   } catch {
     return fb;
   }

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Low Stock Register — Golden Heera POS</title>
+<link rel="stylesheet" href="styles.css">
+<script src="chrome.js"></script>
+</head>
+<body data-page="low-stock">
+<main class="page">
+  <h1 class="ptitle">Low Stock Register</h1>
+  <div class="flex gap-2 mb-3 items-center">
+    <span class="text-xs text-slate-400">Available Qty ≤ Minimum Stock · 3 items</span>
+    <button class="btn btn-ghost ml-auto" onclick="toast('Exported 3 rows (.xls) → C:\\GH-Backups\\low-stock.xls (demo)')">Export Low Stock (.xls)</button>
+  </div>
+  <div class="card p-0 overflow-auto max-h-65vh">
+    <table class="tbl">
+      <thead><tr><th>Product Name</th><th>Barcode</th><th>Alias</th><th>Group</th><th>Available Qty</th><th>Minimum Stock</th><th>Unit</th></tr></thead>
+      <tbody>
+        <tr><td>SURF EXCEL 1KG</td><td class="mono">1011</td><td class="mono">1011</td><td>GENERAL</td><td class="mono">3</td><td class="mono">10</td><td>Pcs</td></tr>
+        <tr><td>TATA TEA GOLD 250G</td><td class="mono">1015</td><td class="mono">1015</td><td>GENERAL</td><td class="mono">5</td><td class="mono">12</td><td>Pcs</td></tr>
+        <tr><td>FORTUNE MUSTARD OIL 1L</td><td class="mono">1005</td><td class="mono">1005</td><td>GENERAL</td><td class="mono">8</td><td class="mono">12</td><td>Pcs</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+</body>
+</html>

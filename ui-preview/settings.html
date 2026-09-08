@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings &amp; Hardware — Golden Heera POS</title>
+<link rel="stylesheet" href="styles.css">
+<script src="chrome.js"></script>
+</head>
+<body data-page="settings">
+<main class="page">
+  <div class="max-w-2xl">
+    <h1 class="ptitle">Settings &amp; Hardware</h1>
+
+    <div class="card grid grid-cols-2 gap-3 mb-3">
+      <h2 class="cardtitle col-span-2">Database &amp; Remote Sync</h2>
+      <label class="lbl col-span-2">MongoDB URI<input type="text" class="mono" value="mongodb://localhost:27017/billing_pos"></label>
+      <div class="col-span-2 flex gap-2 items-end" id="lock-row">
+        <label class="lbl flex-1">Admin password (to edit sync endpoint)<input type="password" id="gate"></label>
+        <button class="btn btn-ghost" onclick="unlock()">Unlock</button>
+      </div>
+      <div class="col-span-2 grid grid-cols-2 gap-3" id="sync-fields" hidden>
+        <label class="lbl col-span-2">Remote API Sync Endpoint<input type="text" class="mono" placeholder="https://api.example.com/pos-sync"></label>
+        <label class="lbl col-span-2">Bearer Token<input type="password" value="••••••••"></label>
+        <label class="lbl">Sync Enabled<select><option selected>On</option><option>Off</option></select></label>
+        <label class="lbl">Sync Interval (sec, 5–300)<input type="number" min="5" max="300" value="10"></label>
+        <label class="lbl">Brand Header<input type="text" value="G H"></label>
+        <div class="flex gap-4 items-end" style="padding-bottom:8px">
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" checked style="width:auto">Auto-Print Sales Receipt</label>
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" style="width:auto">Auto-Print Barcode on Purchase</label>
+        </div>
+        <label class="lbl">Item-Not-Found Beep (sec)<input type="number" min="0.1" max="5" step="0.1" value="1.5"></label>
+        <label class="lbl">Default Min Stock<select><option selected>1</option><option>Conversion Factor</option></select></label>
+      </div>
+      <div class="col-span-2 flex gap-2">
+        <button class="btn btn-ghost" onclick="toast('MongoDB OK: mongodb://localhost:27017/billing_pos (demo)')">Test MongoDB</button>
+        <button class="btn btn-ghost" onclick="toast('Sync: pushed 0, pulled 0 docs (demo)')">Sync Now</button>
+      </div>
+    </div>
+
+    <div class="card grid grid-cols-2 gap-3 mb-3">
+      <h2 class="cardtitle col-span-2">Printer Configuration</h2>
+      <label class="lbl">POS Thermal (80mm/ESC-POS)<select><option value="">— select —</option><option selected>POS-80</option><option>TVS RP 3200</option></select></label>
+      <label class="lbl">Thermal Interface<input type="text" class="mono" value="printer:POS-80" placeholder="printer:POS-80 · tcp://192.168.1.50:9100 · COM3"></label>
+      <label class="lbl">Barcode Label Printer<select><option value="">— select —</option><option selected>TSC TTP-244 Pro</option></select></label>
+      <label class="lbl">Label Mode<select><option selected>TSPL</option><option>ZPL</option><option>WINDOWS</option></select></label>
+      <div class="col-span-2 text-slate-400" style="font-size:11px">Detected Windows printers: POS-80, TSC TTP-244 Pro</div>
+    </div>
+
+    <div class="card mb-3 text-xs text-slate-400" id="backup-locked">Unlock with the Admin password above to manage Backup &amp; Restore.</div>
+    <div class="card grid grid-cols-2 gap-3 mb-3" id="backup-card" hidden>
+      <h2 class="cardtitle col-span-2">Backup &amp; Restore <span class="text-slate-400 font-normal" style="font-size:11px">(dual destination A+B, last 30 kept each)</span></h2>
+      <label class="lbl">Destination A (default %APPDATA%/billing_pos/backups)<input type="text" class="mono" placeholder="C:\Users\ADMIN\AppData\Roaming\billing_pos\backups"></label>
+      <label class="lbl">Destination B (USB / drive / share)<input type="text" class="mono" placeholder="e.g. D:\GH-Backups"></label>
+      <div class="col-span-2 flex gap-2 flex-wrap">
+        <button class="btn btn-primary" onclick="toast('Backup created: billing_pos-2026-09-09-0031.tar.gz (48.2 MB) → A+B. Last 30 kept per destination. (demo)')">Create Manual Backup Now</button>
+        <button class="btn btn-ghost" onclick="showRestore('billing_pos-external.tar.gz')">Restore from external file…</button>
+      </div>
+      <div class="col-span-2 card p-0 overflow-auto max-h-56">
+        <table class="tbl">
+          <thead><tr><th>Dest</th><th>Date</th><th>Size</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <tr><td class="mono">A+B</td><td class="mono">09/09/2026 00:31</td><td class="mono">48.2 MB</td><td>valid</td><td><button class="btn btn-ghost" onclick="showRestore('billing_pos-2026-09-09-0031.tar.gz')">Restore…</button></td></tr>
+            <tr><td class="mono">A+B</td><td class="mono">08/09/2026 00:30</td><td class="mono">47.9 MB</td><td>valid</td><td><button class="btn btn-ghost" onclick="showRestore('billing_pos-2026-09-08-0030.tar.gz')">Restore…</button></td></tr>
+            <tr><td class="mono">A</td><td class="mono">07/09/2026 00:30</td><td class="mono">47.5 MB</td><td>valid</td><td><button class="btn btn-ghost" onclick="showRestore('billing_pos-2026-09-07-0030.tar.gz')">Restore…</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="col-span-2 redpanel" id="restore-panel" hidden>
+        <div class="font-bold">Restore will OVERWRITE the live database with:</div>
+        <div class="mono text-sm mt-1" id="restore-name">billing_pos-2026-09-09-0031.tar.gz</div>
+        <div class="text-xs text-slate-400 mt-1">Sync pauses during restore and resumes after. Type <b class="mono">RESTORE</b> to confirm.</div>
+        <div class="flex gap-2 mt-2 items-center flex-wrap">
+          <input type="text" class="mono w-44" placeholder="Type RESTORE" id="restore-text">
+          <button class="btn btn-danger" id="restore-confirm" disabled>Confirm Restore</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('restore-panel').hidden=true">Cancel</button>
+        </div>
+      </div>
+      <div class="col-span-2 text-sm text-emerald-300" id="restore-done" hidden>Verified counts — Products 128→128 · Ledgers 9→9 · Sales 1041→1041 · Purchases 312→312 <button class="btn btn-ghost ml-3" onclick="location.reload()">Reload App</button></div>
+    </div>
+
+    <div class="card grid grid-cols-2 gap-3 mb-3" id="users-card" hidden>
+      <h2 class="cardtitle col-span-2">User Accounts &amp; RBAC</h2>
+      <div class="col-span-2 card p-0 overflow-auto max-h-56">
+        <table class="tbl">
+          <thead><tr><th>Username</th><th>Role</th><th>Pages</th><th>Active</th><th></th></tr></thead>
+          <tbody>
+            <tr><td class="mono">ADMIN</td><td><select><option selected>ADMIN</option><option>OPERATOR</option><option>CASHIER</option></select></td><td class="text-xs">all</td><td><input type="checkbox" checked style="width:auto"></td><td class="whitespace-nowrap"><button class="btn btn-ghost mr-1" onclick="toast('Reset password for ADMIN (demo)')">Reset PW</button><button class="btn btn-ghost" onclick="toast('Allowed pages editor (demo)')">Pages…</button></td></tr>
+            <tr><td class="mono">OPERATOR1</td><td><select><option>ADMIN</option><option selected>OPERATOR</option><option>CASHIER</option></select></td><td class="text-xs">12 pages</td><td><input type="checkbox" checked style="width:auto"></td><td class="whitespace-nowrap"><button class="btn btn-ghost mr-1" onclick="toast('Reset password for OPERATOR1 (demo)')">Reset PW</button><button class="btn btn-ghost" onclick="toast('Allowed pages editor (demo)')">Pages…</button></td></tr>
+            <tr><td class="mono">CASHIER1</td><td><select><option>ADMIN</option><option>OPERATOR</option><option selected>CASHIER</option></select></td><td class="text-xs">4 pages</td><td><input type="checkbox" checked style="width:auto"></td><td class="whitespace-nowrap"><button class="btn btn-ghost mr-1" onclick="toast('Reset password for CASHIER1 (demo)')">Reset PW</button><button class="btn btn-ghost" onclick="toast('Allowed pages editor (demo)')">Pages…</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <label class="lbl">New username<input type="text" class="mono" style="text-transform:uppercase"></label>
+      <label class="lbl">Password<input type="password"></label>
+      <div class="flex items-end"><label class="lbl flex-1">Role<select><option>ADMIN</option><option>OPERATOR</option><option selected>CASHIER</option></select></label></div>
+      <div><button class="btn btn-primary" onclick="toast('User created. (demo)')">Create User</button></div>
+      <div class="col-span-2 text-slate-400" style="font-size:11px">Default page set for new users:</div>
+      <div class="col-span-2 flex gap-2 flex-wrap" style="font-size:11px">
+        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Dashboard</label>
+        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Sales Add</label>
+        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Sales Display</label>
+        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Product Add</label>
+        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Product Display</label>
+        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Purchase Add</label>
+        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Purchase Display</label>
+        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Stock Master</label>
+        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Stock Adjustment</label>
+        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Low Stock</label>
+        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Barcode Print</label>
+        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Sales Ledger</label>
+        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Purchase Ledger</label>
+        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Supplier Ledger</label>
+        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Settings</label>
+      </div>
+    </div>
+
+    <div class="card grid grid-cols-2 gap-3 mb-3">
+      <h2 class="cardtitle col-span-2">Credentials Manager</h2>
+      <label class="lbl">Current password<input type="password"></label>
+      <label class="lbl">New password<input type="password"></label>
+      <div class="col-span-2"><button class="btn btn-ghost" onclick="toast('Password updated. (demo)')">Update Password</button></div>
+    </div>
+
+    <button class="btn btn-primary" onclick="toast('Settings saved (sync interval applied live). (demo)')">Save All Settings</button>
+    <div class="text-sm text-amber-300 mt-2" id="pagemsg" hidden></div>
+  </div>
+</main>
+<script>
+function unlock() {
+  document.getElementById('lock-row').hidden = true;
+  document.getElementById('sync-fields').hidden = false;
+  document.getElementById('backup-locked').hidden = true;
+  document.getElementById('backup-card').hidden = false;
+  document.getElementById('users-card').hidden = false;
+  toast('Unlocked with Admin password (demo)');
+}
+function showRestore(name) {
+  document.getElementById('restore-name').textContent = name;
+  document.getElementById('restore-panel').hidden = false;
+  document.getElementById('restore-done').hidden = true;
+  document.getElementById('restore-text').value = '';
+  document.getElementById('restore-confirm').disabled = true;
+}
+document.getElementById('restore-text').addEventListener('input', function () {
+  document.getElementById('restore-confirm').disabled = this.value !== 'RESTORE';
+});
+document.getElementById('restore-confirm').addEventListener('click', function () {
+  document.getElementById('restore-panel').hidden = true;
+  document.getElementById('restore-done').hidden = false;
+});
+</script>
+</body>
+</html>

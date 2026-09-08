@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Barcode Print — Golden Heera POS</title>
+<link rel="stylesheet" href="styles.css">
+<script src="chrome.js"></script>
+</head>
+<body data-page="barcode-print">
+<main class="page">
+  <h1 class="ptitle">Barcode Print <span class="text-xs text-slate-400 font-normal">50mm × 25mm</span></h1>
+  <div class="card mb-3 grid grid-cols-2 gap-3">
+    <label class="lbl" style="position:relative">Search Barcode / Alias / Name
+      <input type="text" placeholder="Wildcard supported (* ? %)…" class="mono" autofocus id="s">
+      <div class="dd" id="s-dd" hidden>
+        <div class="opt"><span class="mono text-slate-400">1001</span> TATA SALT 1KG</div>
+        <div class="opt"><span class="mono text-slate-400">1002</span> AASHIRVAAD ATTA 5KG</div>
+        <div class="opt"><span class="mono text-slate-400">1007</span> PARLE-G 200G</div>
+      </div>
+    </label>
+    <div class="grid grid-cols-2 gap-2 items-end">
+      <label class="lbl">Number of Barcode Labels to Print<input type="number" min="1" max="999" value="12" id="copies"></label>
+      <button class="btn btn-primary" onclick="toast('Sent 12 label(s) × 1001 via TSPL. (demo)')">Print Batch</button>
+    </div>
+  </div>
+
+  <div class="card mb-3 grid grid-cols-2 gap-3">
+    <div>
+      <div class="font-bold text-lg">TATA SALT 1KG</div>
+      <div class="text-sm mono text-slate-400">Barcode 1001 · Alias 1001 · Pack 1</div>
+      <div class="text-sm mt-1">MRP ₹28.00 · WH ₹25.00 · RT ₹28.00 · Stock 142</div>
+    </div>
+    <div>
+      <div class="label-50x25">
+        <div style="font-size:9px;font-weight:bold;white-space:nowrap;overflow:hidden">TATA SALT 1KG</div>
+        <div style="font-size:14px;letter-spacing:4px">▮▮ ▮▮▮ ▮ ▮▮ 1001</div>
+        <div style="font-size:8px">MRP ₹28.00 · PK 1</div>
+      </div>
+      <pre class="code mt-2">SIZE 50 mm, 25 mm
+GAP 2 mm, 0 mm
+DIRECTION 1
+CLS
+TEXT 10,10,"2",0,1,1,"TATA SALT 1KG"
+BARCODE 10,40,"39",48,1,0,2,2,"1001"
+PRINT 12,1</pre>
+    </div>
+  </div>
+</main>
+<script>
+(function () {
+  var inp = document.getElementById('s'), dd = document.getElementById('s-dd');
+  inp.addEventListener('input', function () { dd.hidden = !inp.value.trim(); });
+  inp.addEventListener('blur', function () { setTimeout(function () { dd.hidden = true; }, 150); });
+  dd.querySelectorAll('.opt').forEach(function (o) {
+    o.addEventListener('mousedown', function () { inp.value = ''; dd.hidden = true; toast('Item selected — 1-copy preview loaded (demo)'); });
+  });
+})();
+</script>
+</body>
+</html>

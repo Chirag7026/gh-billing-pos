@@ -11,3 +11,4 @@ tools_temp/
 *.log
 .DS_Store
 Thumbs.db
+release-ci/

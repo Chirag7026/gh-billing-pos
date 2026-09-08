@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Invoice Add — Golden Heera POS</title>
+<link rel="stylesheet" href="styles.css">
+<script src="chrome.js"></script>
+</head>
+<body data-page="sales-add">
+<main class="page">
+  <h1 class="ptitle">Sales Invoice Add <span class="kbd ml-2">F1</span></h1>
+
+  <div class="card mb-3 grid grid-cols-2 md:grid-cols-6 gap-2 items-end" style="grid-template-columns:repeat(6,1fr)">
+    <div class="flex gap-1">
+      <button class="btn btn-primary flex-1" id="t-cash">Cash</button>
+      <button class="btn btn-ghost flex-1" id="t-debit">Debit</button>
+    </div>
+    <div class="flex gap-1">
+      <button class="btn btn-amber flex-1" id="t-wh">WH</button>
+      <button class="btn btn-ghost flex-1" id="t-rt">RT</button>
+    </div>
+    <div class="col-span-2">
+      <button class="btn btn-primary w-full" id="t-mode" title="Toggle with F10 or Space">+ ADD MODE <span class="kbd ml-1">F10</span></button>
+    </div>
+    <label class="lbl">Bill No<input type="text" class="mono" value="1042"></label>
+    <label class="lbl">Date<input type="text" value="09/09/2026"></label>
+    <label class="lbl col-span-2 relative" style="position:relative">Customer
+      <input type="text" placeholder="Search / quick-add…" value="12345678 CASH" id="cust">
+      <div class="dd" id="cust-dd" hidden>
+        <div class="opt">12345678 CASH <span class="text-slate-400">· COUNTER</span></div>
+        <div class="opt">RAMESH KUMAR <span class="text-slate-400">· JAIPUR</span></div>
+        <div class="opt">SURESH TRADERS <span class="text-slate-400">· SIKAR</span></div>
+        <div class="opt" style="color:#6ee7b7">+ Quick-add “NEW PARTY”</div>
+      </div>
+    </label>
+  </div>
+
+  <div class="card mb-3 grid grid-cols-2 gap-2">
+    <label class="lbl" style="position:relative">Scanner input (auto-focus trap)
+      <div class="flex gap-2">
+        <input type="text" data-barcode-field="true" placeholder="Scan barcode…" class="mono flex-1" autofocus id="scan">
+        <button class="btn btn-primary" id="scan-go">Add</button>
+      </div>
+    </label>
+    <label class="lbl" style="position:relative">…or type name
+      <input type="text" placeholder="Live search by name…" id="namesearch">
+      <div class="dd" id="name-dd" hidden>
+        <div class="opt"><span class="mono text-slate-400">1001</span> TATA SALT 1KG <b>₹28.00</b></div>
+        <div class="opt"><span class="mono text-slate-400">1002</span> AASHIRVAAD ATTA 5KG <b>₹215.00</b></div>
+        <div class="opt"><span class="mono text-slate-400">1007</span> PARLE-G 200G <b>₹10.00</b></div>
+      </div>
+    </label>
+  </div>
+
+  <div class="card p-0 overflow-auto max-h-40vh mb-3">
+    <table class="tbl sales-table" id="cart">
+      <thead><tr><th>#</th><th>Particulars</th><th>Pack</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead>
+      <tbody id="cart-body">
+        <tr data-rate="28"><td>1</td><td><div>TATA SALT 1KG</div><div class="text-slate-400 mono" style="font-size:11px">1001</div></td><td><input type="number" class="w-16 c-pack" value="1"></td><td><input type="number" class="w-20 c-qty" value="2"></td><td><input type="number" class="w-24 c-rate" value="28"></td><td class="mono c-amt">₹56.00</td></tr>
+        <tr data-rate="215"><td>2</td><td><div>AASHIRVAAD ATTA 5KG</div><div class="text-slate-400 mono" style="font-size:11px">1002</div></td><td><input type="number" class="w-16 c-pack" value="1"></td><td><input type="number" class="w-20 c-qty" value="1"></td><td><input type="number" class="w-24 c-rate" value="215"></td><td class="mono c-amt">₹215.00</td></tr>
+        <tr data-rate="10"><td>3</td><td><div>PARLE-G 200G</div><div class="text-slate-400 mono" style="font-size:11px">1007</div></td><td><input type="number" class="w-16 c-pack" value="12"></td><td><input type="number" class="w-20 c-qty" value="1"></td><td><input type="number" class="w-24 c-rate" value="10"></td><td class="mono c-amt">₹10.00</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="flex items-center gap-3 flex-wrap">
+    <div class="text-sm" id="stats">Items <b>3</b> · PackQty <b>4</b> · Units <b>15.00</b> · Sub <b class="mono">₹281.00</b></div>
+    <div class="text-xl font-extrabold ml-auto">Grand Total <span class="mono text-emerald-300" id="grand">₹281.00</span></div>
+  </div>
+  <div class="flex gap-2 mt-3">
+    <button class="btn btn-primary" onclick="toast('Saved bill 1042 + printed. (demo)')">Save &amp; Print <span class="kbd ml-1">F9</span></button>
+    <button class="btn btn-ghost" onclick="toast('Saved bill 1042. (demo)')">Save Only</button>
+    <button class="btn btn-danger" onclick="toast('Cart cleared. (demo)')">Cancel</button>
+  </div>
+  <div class="msg" id="pagemsg" hidden></div>
+</main>
+<script>
+(function () {
+  function inr(n) { return '₹' + n.toFixed(2); }
+  function recalc() {
+    var rows = document.querySelectorAll('#cart-body tr'), items = rows.length, pq = 0, units = 0, sub = 0;
+    rows.forEach(function (r) {
+      var pack = parseFloat(r.querySelector('.c-pack').value) || 0,
+          qty = parseFloat(r.querySelector('.c-qty').value) || 0,
+          rate = parseFloat(r.querySelector('.c-rate').value) || 0,
+          amt = qty * rate;
+      pq += qty; units += qty * pack; sub += amt;
+      r.querySelector('.c-amt').textContent = inr(amt);
+    });
+    document.getElementById('stats').innerHTML = 'Items <b>' + items + '</b> · PackQty <b>' + pq + '</b> · Units <b>' + units.toFixed(2) + '</b> · Sub <b class="mono">' + inr(sub) + '</b>';
+    document.getElementById('grand').textContent = inr(sub);
+  }
+  document.querySelectorAll('#cart-body input').forEach(function (i) { i.addEventListener('input', recalc); });
+  recalc();
+
+  function pair(on, off, fn) {
+    var a = document.getElementById(on), b = document.getElementById(off);
+    function set(first) {
+      a.className = 'btn flex-1 ' + (first ? 'btn-primary' : 'btn-ghost');
+      b.className = 'btn flex-1 ' + (first ? 'btn-ghost' : 'btn-primary');
+      if (fn) fn(first);
+    }
+    a.addEventListener('click', function () { set(true); });
+    b.addEventListener('click', function () { set(false); });
+  }
+  pair('t-cash', 't-debit');
+  pair('t-wh', 't-rt', function (wh) {
+    document.getElementById('t-wh').className = 'btn flex-1 ' + (wh ? 'btn-amber' : 'btn-ghost');
+    document.getElementById('t-rt').className = 'btn flex-1 ' + (wh ? 'btn-ghost' : 'btn-amber');
+    toast(wh ? 'Wholesale rates applied (demo)' : 'Retail rates applied (demo)');
+  });
+
+  var addMode = true, modeBtn = document.getElementById('t-mode'), goBtn = document.getElementById('scan-go');
+  function setMode(add) {
+    addMode = add;
+    modeBtn.className = 'btn w-full ' + (add ? 'btn-primary' : 'btn-danger');
+    modeBtn.innerHTML = (add ? '+ ADD MODE ' : '− REMOVE MODE ') + '<span class="kbd ml-1">F10</span>';
+    goBtn.textContent = add ? 'Add' : 'Remove';
+  }
+  modeBtn.addEventListener('click', function () { setMode(!addMode); });
+  document.addEventListener('keydown', function (e) {
+    var tag = (document.activeElement && document.activeElement.tagName) || '';
+    if (/INPUT|SELECT|TEXTAREA|BUTTON/.test(tag)) return;
+    if (e.key === 'F10' || e.key === ' ') { e.preventDefault(); setMode(!addMode); }
+    if (e.key === 'F9') { e.preventDefault(); toast('Saved bill 1042 + printed. (demo)'); }
+  });
+  document.getElementById('scan').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && this.value.trim()) { toast((addMode ? 'Added ' : 'Removed ') + this.value.trim().toUpperCase() + ' (demo)'); this.value = ''; this.focus(); }
+  });
+  goBtn.addEventListener('click', function () {
+    var s = document.getElementById('scan');
+    if (s.value.trim()) { toast((addMode ? 'Added ' : 'Removed ') + s.value.trim().toUpperCase() + ' (demo)'); s.value = ''; s.focus(); }
+  });
+
+  function dropdown(inputId, ddId) {
+    var inp = document.getElementById(inputId), dd = document.getElementById(ddId);
+    inp.addEventListener('focus', function () { if (inp.value.trim()) dd.hidden = false; });
+    inp.addEventListener('input', function () { dd.hidden = !inp.value.trim(); });
+    dd.querySelectorAll('.opt').forEach(function (o) {
+      o.addEventListener('mousedown', function () {
+        if (o.textContent.indexOf('Quick-add') === 0) { toast('Ledger quick-add (demo)'); }
+        else { inp.value = o.textContent.trim().split('·')[0].trim(); toast('Selected (demo)'); }
+        dd.hidden = true;
+      });
+    });
+    inp.addEventListener('blur', function () { setTimeout(function () { dd.hidden = true; }, 150); });
+  }
+  dropdown('cust', 'cust-dd');
+  dropdown('namesearch', 'name-dd');
+})();
+</script>
+</body>
+</html>

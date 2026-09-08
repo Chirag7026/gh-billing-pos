@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supplier / Ledger Display — Golden Heera POS</title>
+<link rel="stylesheet" href="styles.css">
+<script src="chrome.js"></script>
+</head>
+<body data-page="supplier-display">
+<main class="page">
+  <h1 class="ptitle">Supplier / Ledger Display <span class="kbd ml-2">F8</span></h1>
+  <div class="flex gap-2 mb-3 flex-wrap">
+    <input type="text" placeholder="Instant filter by name…" class="w-64" autofocus id="q">
+    <select id="grp" style="width:180px"><option value="">All groups</option><option>Bank Account</option><option selected>Sundry Creditors</option><option>Sundry Debtors</option></select>
+    <button class="btn btn-ghost" onclick="toast('Exported 5 rows → C:\\GH-Backups\\suppliers.xls (demo)')">Excel Export</button>
+    <button class="btn btn-ghost" onclick="toast('Imported 2 accounts (demo)')">Excel Import</button>
+    <span class="text-xs text-slate-400 ml-auto">Dr ₹18,440.00 · Cr ₹12,850.00 · Net ₹5,590.00</span>
+  </div>
+  <div class="card p-0 overflow-auto max-h-65vh">
+    <table class="tbl" id="st">
+      <thead><tr><th>Account</th><th>Phone</th><th>City</th><th>Group</th><th>Op.Bal</th><th>C/D</th><th>Current</th><th></th></tr></thead>
+      <tbody>
+        <tr data-g="Sundry Creditors"><td>ABC TRADERS</td><td>9829012345</td><td>JAIPUR</td><td>Sundry Creditors</td><td>₹10,000.00</td><td>Dr</td><td>₹6,550.00</td><td class="whitespace-nowrap"><button class="btn btn-ghost mr-1" onclick="openSup('ABC TRADERS')">Edit</button><button class="btn btn-danger" onclick="toast('Delete ABC TRADERS? (demo)')">Del</button></td></tr>
+        <tr data-g="Sundry Creditors"><td>SHREE BALAJI AGENCIES</td><td>9828098765</td><td>SIKAR</td><td>Sundry Creditors</td><td>₹0.00</td><td>Dr</td><td>₹12,850.00</td><td class="whitespace-nowrap"><button class="btn btn-ghost mr-1" onclick="openSup('SHREE BALAJI AGENCIES')">Edit</button><button class="btn btn-danger" onclick="toast('Delete SHREE BALAJI AGENCIES? (demo)')">Del</button></td></tr>
+        <tr data-g="Sundry Creditors"><td>KHEMKA DISTRIBUTORS</td><td>9414011223</td><td>JAIPUR</td><td>Sundry Creditors</td><td>₹5,000.00</td><td>Cr</td><td>₹-960.00</td><td class="whitespace-nowrap"><button class="btn btn-ghost mr-1" onclick="openSup('KHEMKA DISTRIBUTORS')">Edit</button><button class="btn btn-danger" onclick="toast('Delete KHEMKA DISTRIBUTORS? (demo)')">Del</button></td></tr>
+        <tr data-g="Sundry Debtors"><td>RAMESH KUMAR</td><td>9887012345</td><td>JAIPUR</td><td>Sundry Debtors</td><td>₹2,000.00</td><td>Dr</td><td>₹1,513.50</td><td class="whitespace-nowrap"><button class="btn btn-ghost mr-1" onclick="openSup('RAMESH KUMAR')">Edit</button><button class="btn btn-danger" onclick="toast('Delete RAMESH KUMAR? (demo)')">Del</button></td></tr>
+        <tr data-g="Bank Account"><td>SBI CURRENT A/C</td><td></td><td>JAIPUR</td><td>Bank Account</td><td>₹50,000.00</td><td>Dr</td><td>₹50,000.00</td><td class="whitespace-nowrap"><button class="btn btn-ghost mr-1" onclick="openSup('SBI CURRENT A/C')">Edit</button><button class="btn btn-danger" onclick="toast('Delete SBI CURRENT A/C? (demo)')">Del</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="modal-overlay" id="sup-modal" hidden>
+    <div class="card w-full max-w-lg grid grid-cols-2 gap-2">
+      <h2 class="font-bold col-span-2" id="sup-title">Inline editor — ABC TRADERS</h2>
+      <label class="lbl">Account<input type="text" value="ABC TRADERS"></label>
+      <label class="lbl">Phone<input type="text" value="9829012345"></label>
+      <label class="lbl">City<input type="text" value="JAIPUR"></label>
+      <label class="lbl">Group<select><option>Bank Account</option><option selected>Sundry Creditors</option><option>Sundry Debtors</option></select></label>
+      <label class="lbl">Opening<input type="number" value="10000"></label>
+      <label class="lbl">Cr/Dr<select><option selected>Dr</option><option>Cr</option></select></label>
+      <div class="col-span-2 flex gap-2">
+        <button class="btn btn-primary" onclick="document.getElementById('sup-modal').hidden=true;toast('Ledger saved. (demo)')">Save</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('sup-modal').hidden=true">Close</button>
+      </div>
+    </div>
+  </div>
+</main>
+<script>
+function openSup(name) {
+  document.getElementById('sup-title').textContent = 'Inline editor — ' + name;
+  document.getElementById('sup-modal').hidden = false;
+}
+function filterSup() {
+  var q = document.getElementById('q').value.trim().toUpperCase();
+  var g = document.getElementById('grp').value;
+  document.querySelectorAll('#st tbody tr').forEach(function (r) {
+    var ok = (!q || r.textContent.toUpperCase().indexOf(q) > -1) && (!g || r.getAttribute('data-g') === g);
+    r.style.display = ok ? '' : 'none';
+  });
+}
+document.getElementById('q').addEventListener('input', filterSup);
+document.getElementById('grp').addEventListener('change', filterSup);
+</script>
+</body>
+</html>

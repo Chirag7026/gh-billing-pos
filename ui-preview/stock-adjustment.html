@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Adjustment — Golden Heera POS</title>
+<link rel="stylesheet" href="styles.css">
+<script src="chrome.js"></script>
+</head>
+<body data-page="stock-adjustment">
+<main class="page">
+  <h1 class="ptitle">Stock Adjustment</h1>
+  <div class="card grid grid-cols-2 gap-3 mb-3">
+    <label class="lbl" style="position:relative">Search Barcode / Alias / Name
+      <input type="text" placeholder="Wildcard supported (* ? %)…" class="mono" autofocus id="s">
+      <div class="dd" id="s-dd" hidden>
+        <div class="opt"><span class="mono text-slate-400">1001</span> TATA SALT 1KG <b>(stock 142)</b></div>
+        <div class="opt"><span class="mono text-slate-400">1011</span> SURF EXCEL 1KG <b>(stock 35)</b></div>
+        <div class="opt"><span class="mono text-slate-400">1015</span> TATA TEA GOLD 250G <b>(stock 52)</b></div>
+      </div>
+    </label>
+    <div class="grid grid-cols-3 gap-2 items-end">
+      <div class="flex gap-1">
+        <button class="btn btn-primary flex-1" id="m-add">+ ADD</button>
+        <button class="btn btn-ghost flex-1" id="m-sub">− SUB</button>
+      </div>
+      <label class="lbl">Quantity<input type="number" value="1" id="qty"></label>
+      <label class="lbl">Reason<select><option>DAMAGE</option><option>EXPIRY</option><option selected>AUDIT VARIANCE</option><option>CORRECTION</option></select></label>
+    </div>
+  </div>
+
+  <div class="card mb-3 flex items-center gap-4 flex-wrap">
+    <div><div class="font-bold">SURF EXCEL 1KG</div><div class="text-xs mono text-slate-400">1011 · 1011</div></div>
+    <div class="ml-auto text-right"><div class="text-sm">Current stock</div><b class="mono text-xl" id="cur">35</b></div>
+    <button class="btn btn-primary" id="apply">Apply Adjustment</button>
+  </div>
+  <div class="text-sm text-amber-300 mb-2" id="pagemsg" hidden></div>
+
+  <div class="card p-0 overflow-auto max-h-40vh">
+    <table class="tbl">
+      <thead><tr><th>Date</th><th>Product</th><th>Type</th><th>Qty</th><th>Prev → New</th><th>Reason</th><th>By</th></tr></thead>
+      <tbody>
+        <tr><td>09/09/2026, 10:24:11</td><td>PARLE-G 200G<div class="text-slate-400 mono" style="font-size:11px">1007</div></td><td>ADD</td><td class="mono">24</td><td class="mono">336 → 360</td><td>DAMAGE</td><td>ADMIN</td></tr>
+        <tr><td>08/09/2026, 18:02:47</td><td>SURF EXCEL 1KG<div class="text-slate-400 mono" style="font-size:11px">1011</div></td><td>SUBTRACT</td><td class="mono">2</td><td class="mono">37 → 35</td><td>EXPIRY</td><td>ADMIN</td></tr>
+        <tr><td>07/09/2026, 12:40:05</td><td>TATA SALT 1KG<div class="text-slate-400 mono" style="font-size:11px">1001</div></td><td>ADD</td><td class="mono">50</td><td class="mono">92 → 142</td><td>AUDIT VARIANCE</td><td>OPERATOR1</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+<script>
+(function () {
+  var sub = false, a = document.getElementById('m-add'), s = document.getElementById('m-sub');
+  a.addEventListener('click', function () { sub = false; a.className = 'btn btn-primary flex-1'; s.className = 'btn btn-ghost flex-1'; });
+  s.addEventListener('click', function () { sub = true; s.className = 'btn btn-danger flex-1'; a.className = 'btn btn-ghost flex-1'; });
+  document.getElementById('apply').addEventListener('click', function () {
+    var q = parseInt(document.getElementById('qty').value) || 0, cur = parseInt(document.getElementById('cur').textContent);
+    var next = sub ? cur - q : cur + q;
+    document.getElementById('cur').textContent = next;
+    var m = document.getElementById('pagemsg');
+    m.textContent = 'Adjusted ' + (sub ? '−' : '+') + ' ' + q + ' → new stock ' + next + '. Audit record written.';
+    m.hidden = false;
+  });
+  var inp = document.getElementById('s'), dd = document.getElementById('s-dd');
+  inp.addEventListener('input', function () { dd.hidden = !inp.value.trim(); });
+  inp.addEventListener('blur', function () { setTimeout(function () { dd.hidden = true; }, 150); });
+  dd.querySelectorAll('.opt').forEach(function (o) {
+    o.addEventListener('mousedown', function () { inp.value = o.textContent.trim().split(' ').slice(0, 2).join(' '); dd.hidden = true; toast('Item selected (demo)'); });
+  });
+})();
+</script>
+</body>
+</html>

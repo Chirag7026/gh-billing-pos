@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Master — Golden Heera POS</title>
+<link rel="stylesheet" href="styles.css">
+<script src="chrome.js"></script>
+</head>
+<body data-page="stock-master">
+<main class="page">
+  <h1 class="ptitle">Stock Master</h1>
+  <div class="flex gap-2 mb-3 flex-wrap">
+    <input type="text" placeholder="Wildcard search: name, alias, barcode (* ? %)…" class="w-80 mono" autofocus id="q">
+    <span class="text-xs text-slate-400 ml-auto" id="count">6 items</span>
+  </div>
+  <div class="card p-0 overflow-auto max-h-60vh">
+    <table class="tbl" id="sm">
+      <thead><tr><th>Barcode</th><th>Name</th><th>Alias</th><th>Unit</th><th>Pur Rate</th><th>Available Qty</th><th>Total Amount</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">1001</td><td>TATA SALT 1KG</td><td class="mono">1001</td><td>Pcs</td><td class="mono">₹22.00</td><td class="mono">142</td><td class="mono">₹3,124.00</td></tr>
+        <tr><td class="mono">1002</td><td>AASHIRVAAD ATTA 5KG</td><td class="mono">1002</td><td>Pcs</td><td class="mono">₹190.00</td><td class="mono">64</td><td class="mono">₹12,160.00</td></tr>
+        <tr><td class="mono">1005</td><td>FORTUNE MUSTARD OIL 1L</td><td class="mono">1005</td><td>Pcs</td><td class="mono">₹175.00</td><td class="mono">48</td><td class="mono">₹8,400.00</td></tr>
+        <tr><td class="mono">1007</td><td>PARLE-G 200G</td><td class="mono">1007</td><td>Box</td><td class="mono">₹8.20</td><td class="mono">360</td><td class="mono">₹2,952.00</td></tr>
+        <tr><td class="mono">1011</td><td>SURF EXCEL 1KG</td><td class="mono">1011</td><td>Pcs</td><td class="mono">₹96.00</td><td class="mono">35</td><td class="mono">₹3,360.00</td></tr>
+        <tr><td class="mono">1015</td><td>TATA TEA GOLD 250G</td><td class="mono">1015</td><td>Pcs</td><td class="mono">₹118.00</td><td class="mono">52</td><td class="mono">₹6,136.00</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card mt-3 flex items-center">
+    <span class="font-bold">Inventory Total Σ(Total Amount)</span>
+    <b class="mono text-emerald-300 text-xl ml-auto">₹36,132.00</b>
+  </div>
+</main>
+<script>
+document.getElementById('q').addEventListener('input', function () {
+  var q = this.value.trim().toUpperCase().replace(/\*/g, '').replace(/%/g, '');
+  var n = 0;
+  document.querySelectorAll('#sm tbody tr').forEach(function (r) {
+    var show = !q || r.textContent.toUpperCase().indexOf(q) > -1;
+    r.style.display = show ? '' : 'none';
+    if (show) n++;
+  });
+  document.getElementById('count').textContent = n + ' items';
+});
+</script>
+</body>
+</html>

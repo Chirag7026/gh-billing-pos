@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Purchase Add + Barcode — Golden Heera POS</title>
+<link rel="stylesheet" href="styles.css">
+<script src="chrome.js"></script>
+</head>
+<body data-page="purchase-add">
+<main class="page">
+  <h1 class="ptitle">Purchase Add + Barcode <span class="kbd ml-2">F5</span></h1>
+
+  <div class="card mb-3 grid grid-cols-5 gap-2 items-end">
+    <label class="lbl col-span-2" style="position:relative">Supplier
+      <input type="text" placeholder="Search supplier…" value="ABC TRADERS" id="sup">
+      <div class="dd" id="sup-dd" hidden>
+        <div class="opt">ABC TRADERS</div>
+        <div class="opt">SHREE BALAJI AGENCIES</div>
+        <div class="opt">KHEMKA DISTRIBUTORS</div>
+      </div>
+    </label>
+    <label class="lbl">Bill No<input type="text" class="mono" value="SUP-2210"></label>
+    <label class="lbl">Date<input type="date" value="2026-09-09"></label>
+    <div class="flex gap-1">
+      <button class="btn btn-primary flex-1" id="p-cash">Cash</button>
+      <button class="btn btn-ghost flex-1" id="p-debit">Debit</button>
+    </div>
+  </div>
+
+  <div class="card mb-3 grid grid-cols-2 gap-2">
+    <label class="lbl">Scan barcode
+      <input type="text" data-barcode-field="true" class="mono" autofocus id="pscan">
+    </label>
+    <label class="lbl" style="position:relative">…or type name
+      <input type="text" id="pname">
+      <div class="dd" id="pname-dd" hidden>
+        <div class="opt"><span class="mono text-slate-400">1001</span> TATA SALT 1KG</div>
+        <div class="opt"><span class="mono text-slate-400">1002</span> AASHIRVAAD ATTA 5KG</div>
+        <div class="opt"><span class="mono text-slate-400">1005</span> FORTUNE MUSTARD OIL 1L</div>
+      </div>
+    </label>
+  </div>
+
+  <div class="card p-0 overflow-auto max-h-38vh mb-3">
+    <table class="tbl" id="prows">
+      <thead><tr><th>Barcode</th><th>Name</th><th>Qty</th><th>Pur</th><th>MRP</th><th>WH</th><th>RT</th><th>Amt</th><th></th></tr></thead>
+      <tbody id="prows-body">
+        <tr><td class="mono">1001</td><td><input type="text" class="w-44" value="TATA SALT 1KG"></td><td><input type="number" class="w-16 pq" value="20"></td><td><input type="number" class="w-20 pp" value="22"></td><td><input type="number" class="w-20" value="28"></td><td><input type="number" class="w-20" value="25"></td><td><input type="number" class="w-20" value="28"></td><td class="mono pa">₹440.00</td><td><button class="btn btn-danger" onclick="this.closest('tr').remove();ptotal()">✕</button></td></tr>
+        <tr><td class="mono">1002</td><td><input type="text" class="w-44" value="AASHIRVAAD ATTA 5KG"></td><td><input type="number" class="w-16 pq" value="10"></td><td><input type="number" class="w-20 pp" value="190"></td><td><input type="number" class="w-20" value="228"></td><td><input type="number" class="w-20" value="205"></td><td><input type="number" class="w-20" value="215"></td><td class="mono pa">₹1,900.00</td><td><button class="btn btn-danger" onclick="this.closest('tr').remove();ptotal()">✕</button></td></tr>
+        <tr><td class="mono">1005</td><td><input type="text" class="w-44" value="FORTUNE MUSTARD OIL 1L"></td><td><input type="number" class="w-16 pq" value="12"></td><td><input type="number" class="w-20 pp" value="175"></td><td><input type="number" class="w-20" value="210"></td><td><input type="number" class="w-20" value="190"></td><td><input type="number" class="w-20" value="198"></td><td class="mono pa">₹2,100.00</td><td><button class="btn btn-danger" onclick="this.closest('tr').remove();ptotal()">✕</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <div>Total Purchase <b class="mono text-emerald-300 text-xl" id="ptotal">₹4,440.00</b></div>
+    <div class="ml-auto flex gap-2">
+      <button class="btn btn-ghost" onclick="toast('Saved purchase SUP-2210. (demo)')">Save</button>
+      <button class="btn btn-primary" onclick="document.getElementById('label-modal').hidden=false">Save &amp; Print Barcode</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="label-modal" hidden>
+    <div class="card w-full max-w-xl max-h-90vh overflow-auto">
+      <h2 class="font-bold mb-2">Labels per item (50mm × 25mm)</h2>
+      <div class="flex items-center gap-2 py-1 border"><span class="mono text-xs w-20">1001</span><span class="text-sm flex-1 truncate">TATA SALT 1KG</span><input type="number" min="1" max="999" value="20" class="w-20"></div>
+      <div class="flex items-center gap-2 py-1 border"><span class="mono text-xs w-20">1002</span><span class="text-sm flex-1 truncate">AASHIRVAAD ATTA 5KG</span><input type="number" min="1" max="999" value="10" class="w-20"></div>
+      <div class="flex items-center gap-2 py-1 border"><span class="mono text-xs w-20">1005</span><span class="text-sm flex-1 truncate">FORTUNE MUSTARD OIL 1L</span><input type="number" min="1" max="999" value="12" class="w-20"></div>
+      <pre class="code mt-2">SIZE 50 mm, 25 mm
+GAP 2 mm, 0 mm
+DIRECTION 1
+CLS
+TEXT 10,10,"2",0,1,1,"TATA SALT 1KG"
+BARCODE 10,40,"39",48,1,0,2,2,"1001"
+PRINT 20,1</pre>
+      <div class="flex gap-2 mt-3">
+        <button class="btn btn-primary" onclick="toast('42 label(s) sent to label printer. (demo)')">Print batch</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('label-modal').hidden=true">Cancel</button>
+      </div>
+    </div>
+  </div>
+</main>
+<script>
+function ptotal() {
+  var t = 0;
+  document.querySelectorAll('#prows-body tr').forEach(function (r) {
+    var q = parseFloat(r.querySelector('.pq').value) || 0, p = parseFloat(r.querySelector('.pp').value) || 0;
+    r.querySelector('.pa').textContent = '₹' + (q * p).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    t += q * p;
+  });
+  document.getElementById('ptotal').textContent = '₹' + t.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+document.querySelectorAll('#prows-body input').forEach(function (i) { i.addEventListener('input', ptotal); });
+(function () {
+  var c = document.getElementById('p-cash'), d = document.getElementById('p-debit');
+  c.addEventListener('click', function () { c.className = 'btn btn-primary flex-1'; d.className = 'btn btn-ghost flex-1'; });
+  d.addEventListener('click', function () { d.className = 'btn btn-primary flex-1'; c.className = 'btn btn-ghost flex-1'; });
+  var s = document.getElementById('sup'), dd = document.getElementById('sup-dd');
+  s.addEventListener('input', function () { dd.hidden = !s.value.trim(); });
+  s.addEventListener('focus', function () { if (s.value.trim()) dd.hidden = false; });
+  s.addEventListener('blur', function () { setTimeout(function () { dd.hidden = true; }, 150); });
+  dd.querySelectorAll('.opt').forEach(function (o) { o.addEventListener('mousedown', function () { s.value = o.textContent.trim(); dd.hidden = true; }); });
+  var n = document.getElementById('pname'), nd = document.getElementById('pname-dd');
+  n.addEventListener('input', function () { nd.hidden = !n.value.trim(); });
+  n.addEventListener('blur', function () { setTimeout(function () { nd.hidden = true; }, 150); });
+  nd.querySelectorAll('.opt').forEach(function (o) { o.addEventListener('mousedown', function () { toast('Added ' + o.textContent.trim() + ' (demo)'); n.value = ''; nd.hidden = true; }); });
+  document.getElementById('pscan').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && this.value.trim()) { toast('Added barcode ' + this.value.trim().toUpperCase() + ' (demo)'); this.value = ''; this.focus(); }
+  });
+})();
+</script>
+</body>
+</html>
