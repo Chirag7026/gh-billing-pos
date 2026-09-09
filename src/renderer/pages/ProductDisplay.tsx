@@ -46,7 +46,7 @@ export default function ProductDisplay() {
     <div>
       <h1 className="text-2xl font-bold mb-3">Product Display <span className="kbd ml-2">F4</span></h1>
       <div className="flex gap-2 mb-3 flex-wrap">
-        <input placeholder="Wildcard search: name, alias, barcode (* ? %)…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-72 font-mono" autoFocus />
+        <input placeholder="WILDCARD SEARCH: NAME, ALIAS, BARCODE (* ? %)…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-72 font-mono" autoFocus />
         <button className="btn-ghost" onClick={() => doExcel('export')}>Export .xls</button>
         <button className="btn-ghost" onClick={() => doExcel('import')}>Import .xls</button>
         <span className="text-xs text-slate-400 ml-auto">{rows.length} rows</span>
@@ -59,7 +59,7 @@ export default function ProductDisplay() {
             {rows.map((r) => (
               <tr key={r._id}>
                 <td className="font-mono">{r.barcode}</td><td>{r.name}</td><td className="font-mono">{r.alias}</td><td>{r.unit}</td>
-                <td>{inr(r.mrp)}</td><td>{inr(r.purRate)}</td><td>{inr(r.whRate)}</td><td>{inr(r.rtRate)}</td>
+                <td className="font-mono">₹{inr(r.mrp)}</td><td className="font-mono">₹{inr(r.purRate)}</td><td className="font-mono">₹{inr(r.whRate)}</td><td className="font-mono">₹{inr(r.rtRate)}</td>
                 <td>{r.convFactor}</td><td>{r.cloQty}</td>
                 <td className="whitespace-nowrap">
                   <button className="btn-ghost mr-1" onClick={() => setEditing({ ...r })}>Edit</button>
