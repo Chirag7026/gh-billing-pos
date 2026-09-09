@@ -1,7 +1,18 @@
 import { useEffect, useState } from 'react';
 import { pos, unwrap } from '../lib/api';
 import { useSession } from '../hooks/useSession';
-import { LEGACY_PAGE_KEYS } from '../../shared/types';
+import { LEGACY_PAGE_KEYS, PAGE_KEYS } from '../../shared/types';
+import { expandPages } from '../hooks/useSession';
+
+const PAGE_LABELS: Record<string, string> = {
+  dashboard: 'Dashboard', 'sales-add': 'Sales Add', 'sales-display': 'Sales Display',
+  'product-add': 'Product Add', 'product-display': 'Product Display',
+  'purchase-add': 'Purchase Add', 'purchase-display': 'Purchase Display',
+  'stock-master': 'Stock Master', 'stock-adjustment': 'Stock Adjustment',
+  'low-stock': 'Low Stock', 'barcode-print': 'Barcode Print',
+  'sales-ledger': 'Sales Ledger', 'purchase-ledger': 'Purchase Ledger',
+  'supplier-ledger': 'Supplier Ledger', settings: 'Settings'
+};
 
 export default function Settings() {
   const { session } = useSession();
@@ -19,11 +30,11 @@ export default function Settings() {
   const [restoreResult, setRestoreResult] = useState<any | null>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
-  const blankUserForm = { username: '', password: '', role: 'CASHIER', active: true, pages: [...LEGACY_PAGE_KEYS] as string[] };
+  const blankUserForm = { username: '', password: '', role: 'CASHIER', active: true, pages: [...PAGE_KEYS] as string[] };
   const [userForm, setUserForm] = useState({ ...blankUserForm });
   const resetUserForm = () => {
     setEditingUserId(null);
-    setUserForm({ username: '', password: '', role: 'CASHIER', active: true, pages: [...LEGACY_PAGE_KEYS] });
+    setUserForm({ username: '', password: '', role: 'CASHIER', active: true, pages: [...PAGE_KEYS] });
   };
 
   useEffect(() => {
@@ -323,17 +334,17 @@ export default function Settings() {
             </label>
           </div>
           <div className="text-sm text-slate-400 mt-3 mb-1">Authorized Pages</div>
-          <div className="flex gap-x-4 gap-y-2 flex-wrap mb-3">
-            {LEGACY_PAGE_KEYS.map((k) => (
-              <label key={k} className="flex items-center gap-1.5 text-sm text-slate-200">
+          <div className="flex gap-2 flex-wrap mb-3" style={{ gap: '4px 16px' }}>
+            {PAGE_KEYS.map((k) => (
+              <label key={k} className="flex items-center gap-1 text-sm">
                 <input
                   type="checkbox"
                   checked={userForm.pages.includes(k)}
                   onChange={() => setUserForm({ ...userForm, pages: togglePage(userForm.pages, k) })}
                   className="accent-slate-100"
-                  style={{ width: 'auto', height: 15 }}
+                  style={{ width: 'auto' }}
                 />
-                {k}
+                {PAGE_LABELS[k] || k}
               </label>
             ))}
           </div>
@@ -371,15 +382,15 @@ export default function Settings() {
                 <tr key={u._id}>
                   <td className="font-semibold">{u.username}</td>
                   <td>{u.role}</td>
-                  <td className="text-[12px] text-slate-300">{u.role === 'ADMIN' ? 'all pages' : (u.allowedPages || []).join(', ')}</td>
+                  <td className="text-xs text-slate-300">{u.role === 'ADMIN' ? 'all pages' : (u.allowedPages || []).map((k: string) => PAGE_LABELS[k] || k).join(', ')}</td>
                   <td>{u.isActive ? 'Yes' : 'No'}</td>
                   <td>
                     <button
-                      className="btn font-semibold text-sm px-4"
-                      style={{ background: '#cdf138', color: '#161824' }}
+                      className="btn font-semibold text-sm"
+                      style={{ background: '#cdf138', color: '#161824', padding: '6px 16px' }}
                       onClick={() => {
                         setEditingUserId(u._id);
-                        setUserForm({ username: u.username, password: '', role: u.role, active: !!u.isActive, pages: u.role === 'ADMIN' ? [...LEGACY_PAGE_KEYS] : [...(u.allowedPages || [])] });
+                        setUserForm({ username: u.username, password: '', role: u.role, active: !!u.isActive, pages: u.role === 'ADMIN' ? [...PAGE_KEYS] : expandPages(u.allowedPages || []) });
                       }}
                     >
                       Edit

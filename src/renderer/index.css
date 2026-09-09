@@ -48,6 +48,24 @@ button {
 .tbl tr:hover td { @apply bg-slate-800/40; }
 .kbd { @apply px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[11px] font-mono; }
 
+/* Preview-parity helpers (ui-preview/styles.css): form labels, dropdowns,
+   message lines, strips, restore panel, code blocks, headings */
+h1.ptitle { @apply text-2xl font-bold mb-3; }
+h2.cardtitle { @apply font-bold; font-size: 16px; }
+label.lbl { display: block; font-size: 14px; }
+.msg { @apply text-sm text-amber-300 mt-2; }
+.msg-xs { @apply text-xs text-amber-300 mb-2; }
+.dd { @apply absolute z-10 bg-slate-800 border border-slate-700 rounded w-full overflow-auto; max-height: 176px; }
+.dd .opt { @apply px-2 py-1 cursor-pointer text-sm; }
+.dd .opt:hover { @apply bg-slate-700; }
+.strip { @apply bg-slate-800/50 rounded p-2 text-sm; }
+.redpanel { border: 1px solid #7f1d1d; border-radius: 6px; padding: 12px; background: rgba(127, 29, 29, 0.15); }
+pre.code { @apply text-[11px] font-mono bg-slate-950 p-2 rounded whitespace-pre-wrap; }
+.max-h-38vh { max-height: 38vh; }
+.max-h-40vh { max-height: 40vh; }
+.max-h-60vh { max-height: 60vh; }
+.max-h-65vh { max-height: 65vh; }
+
 /* Frameless-window drag regions (Electron custom TitleBar) */
 .drag { -webkit-app-region: drag; app-region: drag; }
 .no-drag { -webkit-app-region: no-drag; app-region: no-drag; }

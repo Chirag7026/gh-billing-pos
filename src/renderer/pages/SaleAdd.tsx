@@ -316,7 +316,7 @@ export default function SaleAdd() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-3">Sales Invoice Add <span className="kbd ml-2">F1</span></h1>
+      <h1 className="ptitle">Sales Invoice Add <span className="kbd ml-2">F1</span></h1>
       <div className="card mb-3 grid grid-cols-2 md:grid-cols-6 gap-2 items-end">
         <div className="flex gap-1">
           {(['Cash', 'Debit'] as const).map((t) => (
@@ -337,36 +337,36 @@ export default function SaleAdd() {
             {cartMode === 'ADD' ? '+ ADD MODE' : '− REMOVE MODE'} <span className="kbd ml-1">F10</span>
           </button>
         </div>
-        <label>Bill No<input value={billNo} onChange={(e) => setBillNo(e.target.value)} className="font-mono" /></label>
-        <label>Date<input value={date} onChange={(e) => setDate(e.target.value)} /></label>
-        <label className="col-span-2 relative">Customer
+        <label className="lbl">Bill No<input value={billNo} onChange={(e) => setBillNo(e.target.value)} className="font-mono" /></label>
+        <label className="lbl">Date<input value={date} onChange={(e) => setDate(e.target.value)} /></label>
+        <label className="lbl col-span-2 relative">Customer
           <input value={custSearch || customerName} onChange={(e) => { setCustSearch(e.target.value); setCustomerName(e.target.value); }} placeholder="Search / quick-add…" />
           {custOpts.length > 0 && (
-            <div className="absolute z-10 bg-slate-800 border border-slate-700 rounded w-full max-h-40 overflow-auto">
+            <div className="dd">
               {custOpts.map((c) => (
-                <div key={c._id} className="px-2 py-1 hover:bg-slate-700 cursor-pointer text-sm" onClick={() => { setCustomerId(c._id); setCustomerName(c.accountName); setCustSearch(''); setCustOpts([]); }}>
+                <div key={c._id} className="opt" onClick={() => { setCustomerId(c._id); setCustomerName(c.accountName); setCustSearch(''); setCustOpts([]); }}>
                   {c.accountName} <span className="text-slate-400">· {c.city}</span>
                 </div>
               ))}
-              <div className="px-2 py-1 text-emerald-300 cursor-pointer text-sm" onClick={async () => { const c: any = await unwrap(pos().ledgers.save({ accountName: customerName, group: 'Sundry Debtors' })); setCustomerId(c._id); setCustOpts([]); setCustSearch(''); }}>+ Quick-add “{customerName}”</div>
+              <div className="opt" style={{ color: '#6ee7b7' }} onClick={async () => { const c: any = await unwrap(pos().ledgers.save({ accountName: customerName, group: 'Sundry Debtors' })); setCustomerId(c._id); setCustOpts([]); setCustSearch(''); }}>+ Quick-add “{customerName}”</div>
             </div>
           )}
         </label>
       </div>
 
       <div className="card mb-3 grid md:grid-cols-2 gap-2">
-        <label className="relative">Scanner input (auto-focus trap)
+        <label className="lbl relative">Scanner input (auto-focus trap)
           <div className="flex gap-2">
             <input ref={scanRef} data-barcode-field="true" value={scan} onChange={(e) => setScan(e.target.value)} placeholder="Scan barcode…" className="font-mono flex-1" autoFocus />
             <button className="btn-primary" onClick={submitScan}>{cartMode === 'ADD' ? 'Add' : 'Remove'}</button>
           </div>
         </label>
-        <label className="relative">…or type name
+        <label className="lbl relative">…or type name
           <input value={nameSearch} onChange={(e) => setNameSearch(e.target.value)} placeholder="Live search by name…" />
           {nameOpts.length > 0 && (
-            <div className="absolute z-10 bg-slate-800 border border-slate-700 rounded w-full max-h-44 overflow-auto">
+            <div className="dd">
               {nameOpts.map((p) => (
-                <div key={p._id} className="px-2 py-1 hover:bg-slate-700 cursor-pointer text-sm" onClick={() => applyProduct(p)}>
+                <div key={p._id} className="opt" onClick={() => applyProduct(p)}>
                   <span className="font-mono text-slate-400">{p.barcode}</span> {p.name} <b>₹{inr(rateFor(p))}</b>
                 </div>
               ))}
@@ -375,7 +375,7 @@ export default function SaleAdd() {
         </label>
       </div>
 
-      <div className="card p-0 overflow-auto max-h-[40vh] mb-3">
+      <div className="card p-0 overflow-auto max-h-40vh mb-3">
         <table className="tbl sales-table">
           <thead><tr><th>#</th><th>Particulars</th><th>Pack</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead>
           <tbody>
@@ -403,7 +403,7 @@ export default function SaleAdd() {
         <button className="btn-ghost" onClick={() => save(false)}>Save Only</button>
         <button className="btn-danger" onClick={resetForm}>Cancel</button>
       </div>
-      {msg && <div className="text-sm text-amber-300 mt-2">{msg}</div>}
+      {msg && <div className="msg">{msg}</div>}
     </div>
   );
 }

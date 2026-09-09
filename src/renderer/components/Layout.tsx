@@ -98,10 +98,11 @@ function useEffectShortcuts(nav: ReturnType<typeof useNavigate>) {
     };
     const onKey = (e: KeyboardEvent) => {
       const dest = map[e.key];
-      if (dest) {
-        e.preventDefault();
-        nav(dest);
-      }
+      if (!dest) return;
+      const tag = ((e.target as HTMLElement)?.tagName || '').toUpperCase();
+      if (/INPUT|SELECT|TEXTAREA|BUTTON/.test(tag)) return;
+      e.preventDefault();
+      nav(dest);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
