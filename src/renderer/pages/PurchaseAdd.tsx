@@ -183,39 +183,40 @@ export default function PurchaseAdd() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-3">Purchase Add + Barcode <span className="kbd ml-2">F5</span></h1>
+      <h1 className="ptitle">Purchase Add + Barcode <span className="kbd ml-2">F5</span></h1>
       <div className="card mb-3 grid grid-cols-2 md:grid-cols-5 gap-2 items-end">
-        <label className="relative col-span-2">Supplier
+        <label className="lbl relative col-span-2">Supplier
           <input value={supSearch || supplierName} onChange={(e) => { setSupSearch(e.target.value); setSupplierName(e.target.value); }} placeholder="Search supplier…" />
           {supOpts.length > 0 && (
-            <div className="absolute z-10 bg-slate-800 border border-slate-700 rounded w-full max-h-40 overflow-auto">
+            <div className="dd">
               {supOpts.map((c) => (
-                <div key={c._id} className="px-2 py-1 hover:bg-slate-700 cursor-pointer text-sm" onClick={() => { setSupplierId(c._id); setSupplierName(c.accountName); setSupSearch(''); setSupOpts([]); }}>{c.accountName}</div>
+                <div key={c._id} className="opt" onClick={() => { setSupplierId(c._id); setSupplierName(c.accountName); setSupSearch(''); setSupOpts([]); }}>{c.accountName}</div>
               ))}
             </div>
           )}
         </label>
-        <label>Bill No<input value={billNo} onChange={(e) => setBillNo(e.target.value)} className="font-mono" /></label>
-        <label>Date<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
+        <label className="lbl">Bill No<input value={billNo} onChange={(e) => setBillNo(e.target.value)} className="font-mono" /></label>
+        <label className="lbl">Date<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
         <div className="flex gap-1">{(['Cash', 'Debit'] as const).map((t) => <button key={t} className={`${paymentType === t ? 'btn-primary' : 'btn-ghost'} flex-1`} onClick={() => setPaymentType(t)}>{t}</button>)}</div>
       </div>
 
       <div className="card mb-3 grid md:grid-cols-2 gap-2">
-        <label>Scan barcode<input ref={scanRef} data-barcode-field="true" value={scan} onChange={(e) => setScan(e.target.value)} className="font-mono" autoFocus /></label>
-        <label className="relative">…or type name
+        <label className="lbl">Scan barcode<input ref={scanRef} data-barcode-field="true" value={scan} onChange={(e) => setScan(e.target.value)} className="font-mono" autoFocus /></label>
+        <label className="lbl relative">…or type name
           <input value={nameSearch} onChange={(e) => setNameSearch(e.target.value)} />
           {nameOpts.length > 0 && (
-            <div className="absolute z-10 bg-slate-800 border border-slate-700 rounded w-full max-h-44 overflow-auto">
+            <div className="dd">
               {nameOpts.map((p) => (
-                <div key={p._id} className="px-2 py-1 hover:bg-slate-700 cursor-pointer text-sm" onClick={() => addProduct(p)}><span className="font-mono text-slate-400">{p.barcode}</span> {p.name}</div>
+                <div key={p._id} className="opt" onClick={() => addProduct(p)}><span className="font-mono text-slate-400">{p.barcode}</span> {p.name}</div>
               ))}
             </div>
           )}
         </label>
       </div>
 
-      <div className="card p-0 overflow-auto max-h-[38vh] mb-3">
+      <div className="card p-0 overflow-auto max-h-38vh mb-3">
         <table className="tbl">
+          <colgroup><col className="w-24" /><col /><col className="w-20" /><col className="w-20" /><col className="w-20" /><col className="w-20" /><col className="w-20" /><col className="w-28" /><col className="w-14" /></colgroup>
           <thead><tr><th>Barcode</th><th>Name</th><th>Qty</th><th>Pur</th><th>MRP</th><th>WH</th><th>RT</th><th>Amt</th><th></th></tr></thead>
           <tbody>
             {rows.map((r) => (
@@ -227,7 +228,7 @@ export default function PurchaseAdd() {
                 <td><input type="number" value={r.mrp} onChange={(e) => patch(r.key, 'mrp', Number(e.target.value))} className="w-20" /></td>
                 <td><input type="number" value={r.whRate} onChange={(e) => patch(r.key, 'whRate', Number(e.target.value))} className="w-20" /></td>
                 <td><input type="number" value={r.rtRate} onChange={(e) => patch(r.key, 'rtRate', Number(e.target.value))} className="w-20" /></td>
-                <td className="font-mono">{inr(r.amount)}</td>
+                <td className="font-mono">₹{inr(r.amount)}</td>
                 <td><button className="btn-danger" onClick={() => { setRows((p) => p.filter((x) => x.key !== r.key)); previewLabel(r); }}>✕</button></td>
               </tr>
             ))}
@@ -243,7 +244,7 @@ export default function PurchaseAdd() {
           <button className="btn-primary" onClick={() => { const m: any = {}; rows.forEach((r) => (m[r.key] = 1)); setLabelCounts(m); setLabelModal(true); }}>Save & Print Barcode</button>
         </div>
       </div>
-      {msg && <div className="text-sm text-amber-300 mt-2">{msg}</div>}
+      {msg && <div className="msg">{msg}</div>}
 
       {labelModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4">
