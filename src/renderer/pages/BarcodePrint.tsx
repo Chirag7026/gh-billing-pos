@@ -79,7 +79,14 @@ export default function BarcodePrint() {
             <div className="text-sm font-mono text-slate-400">Barcode {sel.barcode} · Alias {sel.alias || '—'} · Pack {sel.convFactor || 1}</div>
             <div className="text-sm mt-1">MRP ₹{inr(sel.mrp)} · WH ₹{inr(sel.whRate)} · RT ₹{inr(sel.rtRate)} · Stock {sel.cloQty}</div>
           </div>
-          {preview && <pre className="text-[11px] font-mono bg-slate-950 p-2 rounded whitespace-pre-wrap">{preview}</pre>}
+          <div>
+            <div className="label-50x25">
+              <div style={{ fontSize: 9, fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden' }}>{sel.name}</div>
+              <div style={{ fontSize: 14, letterSpacing: 4 }}>▮▮ ▮▮▮ ▮ ▮▮ {sel.barcode}</div>
+              <div style={{ fontSize: 8 }}>MRP ₹{inr(sel.mrp)} · PK {sel.convFactor || 1}</div>
+            </div>
+            {preview && <pre className="text-[11px] font-mono bg-slate-950 p-2 rounded mt-2 whitespace-pre-wrap">{preview}</pre>}
+          </div>
         </div>
       )}
       {msg && <div className="text-sm text-amber-300">{msg}</div>}

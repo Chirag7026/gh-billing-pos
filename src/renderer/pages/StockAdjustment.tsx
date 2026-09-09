@@ -75,8 +75,8 @@ export default function StockAdjustmentPage() {
         </label>
         <div className="grid grid-cols-3 gap-2 items-end">
           <div className="flex gap-1">
-            <button className={mode === 'ADD' ? 'btn-primary' : 'btn-ghost'} onClick={() => setMode('ADD')}>+ ADD</button>
-            <button className={mode === 'SUBTRACT' ? 'btn-danger' : 'btn-ghost'} onClick={() => setMode('SUBTRACT')}>− SUB</button>
+            <button className={`${mode === 'ADD' ? 'btn-primary' : 'btn-ghost'} flex-1`} onClick={() => setMode('ADD')}>+ ADD</button>
+            <button className={`${mode === 'SUBTRACT' ? 'btn-danger' : 'btn-ghost'} flex-1`} onClick={() => setMode('SUBTRACT')}>− SUB</button>
           </div>
           <label>Quantity<input type="number" value={qty} onChange={(e) => setQty(Number(e.target.value))} /></label>
           <label>Reason<select value={reason} onChange={(e) => setReason(e.target.value)}>{REASONS.map((r) => <option key={r}>{r}</option>)}</select></label>
@@ -85,7 +85,7 @@ export default function StockAdjustmentPage() {
       {sel && (
         <div className="card mb-3 flex items-center gap-4 flex-wrap">
           <div><div className="font-bold">{sel.name}</div><div className="text-xs font-mono text-slate-400">{sel.barcode} · {sel.alias}</div></div>
-          <div className="ml-auto">Current stock <b className="font-mono text-xl">{sel.cloQty}</b></div>
+          <div className="ml-auto text-right"><div className="text-sm">Current stock</div><b className="font-mono text-xl">{sel.cloQty}</b></div>
           <button className="btn-primary" onClick={submit}>Apply Adjustment</button>
         </div>
       )}

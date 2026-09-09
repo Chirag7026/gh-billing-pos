@@ -320,12 +320,12 @@ export default function SaleAdd() {
       <div className="card mb-3 grid grid-cols-2 md:grid-cols-6 gap-2 items-end">
         <div className="flex gap-1">
           {(['Cash', 'Debit'] as const).map((t) => (
-            <button key={t} className={paymentType === t ? 'btn-primary' : 'btn-ghost'} onClick={() => setPaymentType(t)}>{t}</button>
+            <button key={t} className={`${paymentType === t ? 'btn-primary' : 'btn-ghost'} flex-1`} onClick={() => setPaymentType(t)}>{t}</button>
           ))}
         </div>
         <div className="flex gap-1">
           {(['Wholesale', 'Retail'] as const).map((m) => (
-            <button key={m} className={pricingMode === m ? 'btn-amber' : 'btn-ghost'} onClick={() => toggleMode(m)}>{m === 'Wholesale' ? 'WH' : 'RT'}</button>
+            <button key={m} className={`${pricingMode === m ? 'btn-amber' : 'btn-ghost'} flex-1`} onClick={() => toggleMode(m)}>{m === 'Wholesale' ? 'WH' : 'RT'}</button>
           ))}
         </div>
         <div className="col-span-2">

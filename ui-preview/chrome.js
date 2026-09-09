@@ -44,9 +44,11 @@
       '<span class="t-logo">G H <span>· GH Billing POS</span></span>' +
       '<span class="t-dot" title="Synced · 10s"></span>' +
       '<div class="t-right">' +
-        '<span class="t-user" title="ADMIN">ADMIN · ADMIN</span>' +
-        '<button class="t-btn" onclick="location.href=\'login.html\'" title="Switch User">Switch User</button>' +
+        '<span style="width:24px;height:24px;border-radius:9999px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#161824;margin-right:8px;background:#d9a521" title="ADMIN · ADMIN">A</span>' +
+        '<span style="font-size:13px;color:#f1f5f9;margin-right:12px">ADMIN</span>' +
+        '<button class="t-btn" onclick="location.href=\'login.html\'" title="Switch User">⇄ Switch User</button>' +
         '<button class="t-btn" onclick="location.href=\'login.html\'" title="Logout">Logout</button>' +
+        '<span style="width:1px;height:20px;background:#334155;margin:0 8px"></span>' +
         '<button class="t-win" title="Minimize" onclick="toast(\'Minimize (desktop only)\')">_</button>' +
         '<button class="t-win" title="Maximize" onclick="toast(\'Maximize (desktop only)\')">□</button>' +
         '<button class="t-win exit" title="Exit" id="t-exit">✕</button>' +

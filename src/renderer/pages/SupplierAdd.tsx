@@ -31,7 +31,7 @@ export default function SupplierAdd() {
         <label>Phone<input value={f.phone} onChange={(e) => set('phone', e.target.value)} /></label>
         <div className="flex gap-2 items-end">
           <label className="flex-1">Opening Balance<input type="number" value={f.openingBalance} onChange={(e) => set('openingBalance', Number(e.target.value))} /></label>
-          <select value={f.balanceType} onChange={(e) => set('balanceType', e.target.value)}><option>Dr</option><option>Cr</option></select>
+          <select value={f.balanceType} onChange={(e) => set('balanceType', e.target.value)} style={{ width: 76 }} title="Dr/Cr"><option>Dr</option><option>Cr</option></select>
         </div>
         <div className="col-span-2 flex gap-2">
           <button className="btn-primary" onClick={save}>Save</button>

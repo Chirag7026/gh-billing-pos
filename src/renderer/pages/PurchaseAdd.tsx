@@ -197,7 +197,7 @@ export default function PurchaseAdd() {
         </label>
         <label>Bill No<input value={billNo} onChange={(e) => setBillNo(e.target.value)} className="font-mono" /></label>
         <label>Date<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
-        <div className="flex gap-1">{(['Cash', 'Debit'] as const).map((t) => <button key={t} className={paymentType === t ? 'btn-primary' : 'btn-ghost'} onClick={() => setPaymentType(t)}>{t}</button>)}</div>
+        <div className="flex gap-1">{(['Cash', 'Debit'] as const).map((t) => <button key={t} className={`${paymentType === t ? 'btn-primary' : 'btn-ghost'} flex-1`} onClick={() => setPaymentType(t)}>{t}</button>)}</div>
       </div>
 
       <div className="card mb-3 grid md:grid-cols-2 gap-2">

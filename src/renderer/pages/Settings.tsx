@@ -21,7 +21,6 @@ export default function Settings() {
   const [msg, setMsg] = useState('');
   const [unlocked, setUnlocked] = useState(false);
   const [gate, setGate] = useState('');
-  const [pw, setPw] = useState({ oldPass: '', newPass: '' });
   const [backups, setBackups] = useState<any[]>([]);
   const [backupDirs, setBackupDirs] = useState<any[]>([]);
   const [backupBusy, setBackupBusy] = useState('');
@@ -29,7 +28,13 @@ export default function Settings() {
   const [restoreText, setRestoreText] = useState('');
   const [restoreResult, setRestoreResult] = useState<any | null>(null);
   const [users, setUsers] = useState<any[]>([]);
-  const [newUser, setNewUser] = useState({ username: '', password: '', role: 'CASHIER', allowedPages: [...PAGE_KEYS] as string[] });
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const blankUserForm = { username: '', password: '', role: 'CASHIER', active: true, pages: [...PAGE_KEYS] as string[] };
+  const [userForm, setUserForm] = useState({ ...blankUserForm });
+  const resetUserForm = () => {
+    setEditingUserId(null);
+    setUserForm({ username: '', password: '', role: 'CASHIER', active: true, pages: [...PAGE_KEYS] });
+  };
 
   useEffect(() => {
     (async () => {
@@ -313,53 +318,89 @@ export default function Settings() {
       )}
 
       {unlocked && isAdmin && (
-        <div className="card grid grid-cols-2 gap-3 mb-3">
-          <h2 className="col-span-2 font-bold">User Accounts & RBAC</h2>
-          <div className="col-span-2 card p-0 overflow-auto max-h-56">
-            <table className="tbl">
-              <thead><tr><th>Username</th><th>Role</th><th>Pages</th><th>Active</th><th></th></tr></thead>
-              <tbody>
-                {users.map((u) => (
-                  <tr key={u._id}>
-                    <td className="font-mono">{u.username}</td>
-                    <td>
-                      <select value={u.role} onChange={async (e) => { try { await unwrap(pos().users.update(u._id, { role: e.target.value })); refreshUsers(); } catch (er: any) { setMsg(er.message); } }}>
-                        <option>ADMIN</option><option>OPERATOR</option><option>CASHIER</option>
-                      </select>
-                    </td>
-                    <td className="text-[11px]">{u.role === 'ADMIN' ? 'all' : `${(u.allowedPages || []).length} pages`}</td>
-                    <td><input type="checkbox" checked={!!u.isActive} onChange={async (e) => { try { await unwrap(pos().users.update(u._id, { isActive: e.target.checked })); refreshUsers(); } catch (er: any) { setMsg(er.message); } }} style={{ width: 'auto' }} /></td>
-                    <td className="whitespace-nowrap">
-                      <button className="btn-ghost mr-1" onClick={() => { const p = prompt(`Reset password for ${u.username} (min 4 chars):`); if (p) unwrap(pos().users.update(u._id, { password: p })).then(refreshUsers).catch((er: any) => setMsg(er.message)); }}>Reset PW</button>
-                      <button className="btn-ghost" onClick={() => { const pages = prompt('Allowed pages (comma-separated keys):', (u.allowedPages || []).join(',')); if (pages !== null) unwrap(pos().users.update(u._id, { allowedPages: pages.split(',').map((x: string) => x.trim()).filter(Boolean) })).then(refreshUsers).catch((er: any) => setMsg(er.message)); }}>Pages…</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="card mb-3">
+          <h2 className="font-bold text-[17px] mb-3" style={{ color: '#cdf138' }}>User Management (RBAC)</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <label>Username<input value={userForm.username} disabled={!!editingUserId} onChange={(e) => setUserForm({ ...userForm, username: e.target.value.toUpperCase() })} className="font-mono" /></label>
+            <label>Password<input type="password" value={userForm.password} onChange={(e) => setUserForm({ ...userForm, password: e.target.value })} placeholder={editingUserId ? '(blank keeps current)' : ''} /></label>
+            <label>Role
+              <select value={userForm.role} onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}>
+                <option>ADMIN</option><option>OPERATOR</option><option>CASHIER</option>
+              </select>
+            </label>
+            <label>Active
+              <input type="checkbox" checked={userForm.active} onChange={(e) => setUserForm({ ...userForm, active: e.target.checked })} className="accent-[#7c3aed]" style={{ width: 'auto', height: 18 }} />
+            </label>
           </div>
-          <label>New username<input value={newUser.username} onChange={(e) => setNewUser({ ...newUser, username: e.target.value.toUpperCase() })} className="font-mono" /></label>
-          <label>Password<input type="password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} /></label>
-          <label>Role<select value={newUser.role} onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}><option>ADMIN</option><option>OPERATOR</option><option>CASHIER</option></select></label>
-          <div className="flex items-end"><button className="btn-primary" onClick={async () => { try { await unwrap(pos().users.create(newUser)); setNewUser({ username: '', password: '', role: 'CASHIER', allowedPages: [...PAGE_KEYS] }); refreshUsers(); } catch (e: any) { setMsg(e.message); } }}>Create User</button></div>
-          <div className="col-span-2 text-[11px] text-slate-400">Default page set for new users:</div>
-          <div className="col-span-2 flex gap-2 flex-wrap">
+          <div className="text-sm text-slate-400 mt-3 mb-1">Authorized Pages</div>
+          <div className="flex gap-x-4 gap-y-2 flex-wrap mb-3">
             {PAGE_KEYS.map((k) => (
-              <label key={k} className="flex items-center gap-1 text-[11px]">
-                <input type="checkbox" checked={newUser.allowedPages.includes(k)} onChange={() => setNewUser({ ...newUser, allowedPages: togglePage(newUser.allowedPages, k) })} style={{ width: 'auto' }} />
+              <label key={k} className="flex items-center gap-1.5 text-sm text-slate-200">
+                <input
+                  type="checkbox"
+                  checked={userForm.pages.includes(k)}
+                  onChange={() => setUserForm({ ...userForm, pages: togglePage(userForm.pages, k) })}
+                  className="accent-slate-100"
+                  style={{ width: 'auto', height: 15 }}
+                />
                 {PAGE_LABELS[k] || k}
               </label>
             ))}
           </div>
+          <div className="flex gap-2 mb-4">
+            <button
+              className="btn font-semibold"
+              style={{ background: '#cdf138', color: '#161824' }}
+              onClick={async () => {
+                try {
+                  if (editingUserId) {
+                    const patch: any = { role: userForm.role, allowedPages: userForm.pages, isActive: userForm.active };
+                    if (userForm.password) patch.password = userForm.password;
+                    await unwrap(pos().users.update(editingUserId, patch));
+                    setMsg(`User ${userForm.username} updated.`);
+                  } else {
+                    await unwrap(pos().users.create({ username: userForm.username, password: userForm.password, role: userForm.role, allowedPages: userForm.pages }));
+                    setMsg(`User ${userForm.username} created.`);
+                  }
+                  resetUserForm();
+                  refreshUsers();
+                } catch (e: any) {
+                  setMsg(e.message);
+                }
+              }}
+            >
+              Save User
+            </button>
+            <button className="btn-ghost" onClick={resetUserForm}>New User</button>
+            {editingUserId && <button className="btn-ghost" onClick={resetUserForm}>Cancel Edit</button>}
+          </div>
+          <table className="tbl">
+            <thead><tr><th>User</th><th>Role</th><th>Pages</th><th>Active</th><th></th></tr></thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u._id}>
+                  <td className="font-semibold">{u.username}</td>
+                  <td>{u.role}</td>
+                  <td className="text-[12px] text-slate-300">{u.role === 'ADMIN' ? 'all pages' : (u.allowedPages || []).map((k: string) => PAGE_LABELS[k] || k).join(', ')}</td>
+                  <td>{u.isActive ? 'Yes' : 'No'}</td>
+                  <td>
+                    <button
+                      className="btn font-semibold text-sm px-4"
+                      style={{ background: '#cdf138', color: '#161824' }}
+                      onClick={() => {
+                        setEditingUserId(u._id);
+                        setUserForm({ username: u.username, password: '', role: u.role, active: !!u.isActive, pages: u.role === 'ADMIN' ? [...PAGE_KEYS] : [...(u.allowedPages || [])] });
+                      }}
+                    >
+                      Edit
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
-
-      <div className="card grid grid-cols-2 gap-3 mb-3">
-        <h2 className="col-span-2 font-bold">Credentials Manager</h2>
-        <label>Current password<input type="password" value={pw.oldPass} onChange={(e) => setPw({ ...pw, oldPass: e.target.value })} /></label>
-        <label>New password<input type="password" value={pw.newPass} onChange={(e) => setPw({ ...pw, newPass: e.target.value })} /></label>
-        <div className="col-span-2"><button className="btn-ghost" onClick={async () => { try { await unwrap(pos().auth.changePassword(session.username || '', pw.oldPass, pw.newPass)); setMsg('Password updated.'); setPw({ oldPass: '', newPass: '' }); } catch (e: any) { setMsg(e.message); } }}>Update Password</button></div>
-      </div>
 
       <button className="btn-primary" onClick={save}>Save All Settings</button>
       {msg && <div className="text-sm text-amber-300 mt-2">{msg}</div>}

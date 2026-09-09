@@ -79,47 +79,43 @@
       <div class="col-span-2 text-sm text-emerald-300" id="restore-done" hidden>Verified counts — Products 128→128 · Ledgers 9→9 · Sales 1041→1041 · Purchases 312→312 <button class="btn btn-ghost ml-3" onclick="location.reload()">Reload App</button></div>
     </div>
 
-    <div class="card grid grid-cols-2 gap-3 mb-3" id="users-card" hidden>
-      <h2 class="cardtitle col-span-2">User Accounts &amp; RBAC</h2>
-      <div class="col-span-2 card p-0 overflow-auto max-h-56">
-        <table class="tbl">
-          <thead><tr><th>Username</th><th>Role</th><th>Pages</th><th>Active</th><th></th></tr></thead>
-          <tbody>
-            <tr><td class="mono">ADMIN</td><td><select><option selected>ADMIN</option><option>OPERATOR</option><option>CASHIER</option></select></td><td class="text-xs">all</td><td><input type="checkbox" checked style="width:auto"></td><td class="whitespace-nowrap"><button class="btn btn-ghost mr-1" onclick="toast('Reset password for ADMIN (demo)')">Reset PW</button><button class="btn btn-ghost" onclick="toast('Allowed pages editor (demo)')">Pages…</button></td></tr>
-            <tr><td class="mono">OPERATOR1</td><td><select><option>ADMIN</option><option selected>OPERATOR</option><option>CASHIER</option></select></td><td class="text-xs">12 pages</td><td><input type="checkbox" checked style="width:auto"></td><td class="whitespace-nowrap"><button class="btn btn-ghost mr-1" onclick="toast('Reset password for OPERATOR1 (demo)')">Reset PW</button><button class="btn btn-ghost" onclick="toast('Allowed pages editor (demo)')">Pages…</button></td></tr>
-            <tr><td class="mono">CASHIER1</td><td><select><option>ADMIN</option><option>OPERATOR</option><option selected>CASHIER</option></select></td><td class="text-xs">4 pages</td><td><input type="checkbox" checked style="width:auto"></td><td class="whitespace-nowrap"><button class="btn btn-ghost mr-1" onclick="toast('Reset password for CASHIER1 (demo)')">Reset PW</button><button class="btn btn-ghost" onclick="toast('Allowed pages editor (demo)')">Pages…</button></td></tr>
-          </tbody>
-        </table>
+    <div class="card mb-3" id="users-card">
+      <h2 class="cardtitle" style="color:#cdf138;font-size:17px;margin-bottom:12px">User Management (RBAC)</h2>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="lbl">Username<input type="text" class="mono" id="u-name"></label>
+        <label class="lbl">Password<input type="password" id="u-pass"></label>
+        <label class="lbl">Role<select id="u-role"><option>ADMIN</option><option>OPERATOR</option><option selected>CASHIER</option></select></label>
+        <label class="lbl">Active<input type="checkbox" checked id="u-active" style="width:auto;height:18px;accent-color:#7c3aed"></label>
       </div>
-      <label class="lbl">New username<input type="text" class="mono" style="text-transform:uppercase"></label>
-      <label class="lbl">Password<input type="password"></label>
-      <div class="flex items-end"><label class="lbl flex-1">Role<select><option>ADMIN</option><option>OPERATOR</option><option selected>CASHIER</option></select></label></div>
-      <div><button class="btn btn-primary" onclick="toast('User created. (demo)')">Create User</button></div>
-      <div class="col-span-2 text-slate-400" style="font-size:11px">Default page set for new users:</div>
-      <div class="col-span-2 flex gap-2 flex-wrap" style="font-size:11px">
-        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Dashboard</label>
-        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Sales Add</label>
-        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Sales Display</label>
-        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Product Add</label>
-        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Product Display</label>
-        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Purchase Add</label>
-        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Purchase Display</label>
-        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Stock Master</label>
-        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Stock Adjustment</label>
-        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Low Stock</label>
-        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Barcode Print</label>
-        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Sales Ledger</label>
-        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Purchase Ledger</label>
-        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Supplier Ledger</label>
-        <label class="flex items-center gap-1"><input type="checkbox" checked style="width:auto">Settings</label>
+      <div class="text-sm text-slate-400 mt-3 mb-1">Authorized Pages</div>
+      <div class="flex gap-2 flex-wrap mb-3" style="gap:4px 16px" id="u-pages">
+        <label class="flex items-center gap-1 text-sm"><input type="checkbox" checked style="width:auto">Dashboard</label>
+        <label class="flex items-center gap-1 text-sm"><input type="checkbox" checked style="width:auto">Sales Add</label>
+        <label class="flex items-center gap-1 text-sm"><input type="checkbox" checked style="width:auto">Sales Display</label>
+        <label class="flex items-center gap-1 text-sm"><input type="checkbox" checked style="width:auto">Product Add</label>
+        <label class="flex items-center gap-1 text-sm"><input type="checkbox" checked style="width:auto">Product Display</label>
+        <label class="flex items-center gap-1 text-sm"><input type="checkbox" checked style="width:auto">Purchase Add</label>
+        <label class="flex items-center gap-1 text-sm"><input type="checkbox" checked style="width:auto">Purchase Display</label>
+        <label class="flex items-center gap-1 text-sm"><input type="checkbox" checked style="width:auto">Stock Master</label>
+        <label class="flex items-center gap-1 text-sm"><input type="checkbox" checked style="width:auto">Stock Adjustment</label>
+        <label class="flex items-center gap-1 text-sm"><input type="checkbox" checked style="width:auto">Low Stock</label>
+        <label class="flex items-center gap-1 text-sm"><input type="checkbox" checked style="width:auto">Barcode Print</label>
+        <label class="flex items-center gap-1 text-sm"><input type="checkbox" checked style="width:auto">Sales Ledger</label>
+        <label class="flex items-center gap-1 text-sm"><input type="checkbox" checked style="width:auto">Purchase Ledger</label>
+        <label class="flex items-center gap-1 text-sm"><input type="checkbox" checked style="width:auto">Supplier Ledger</label>
+        <label class="flex items-center gap-1 text-sm"><input type="checkbox" checked style="width:auto">Settings</label>
       </div>
-    </div>
-
-    <div class="card grid grid-cols-2 gap-3 mb-3">
-      <h2 class="cardtitle col-span-2">Credentials Manager</h2>
-      <label class="lbl">Current password<input type="password"></label>
-      <label class="lbl">New password<input type="password"></label>
-      <div class="col-span-2"><button class="btn btn-ghost" onclick="toast('Password updated. (demo)')">Update Password</button></div>
+      <div class="flex gap-2 mb-4">
+        <button class="btn font-semibold" style="background:#cdf138;color:#161824" onclick="toast('User saved. (demo)')">Save User</button>
+        <button class="btn btn-ghost" onclick="toast('Form cleared. (demo)')">New User</button>
+      </div>
+      <table class="tbl">
+        <thead><tr><th>User</th><th>Role</th><th>Pages</th><th>Active</th><th></th></tr></thead>
+        <tbody>
+          <tr><td class="font-bold">ADMIN</td><td>ADMIN</td><td class="text-xs text-slate-300">all pages</td><td>Yes</td><td><button class="btn font-semibold text-sm" style="background:#cdf138;color:#161824;padding:6px 16px" onclick="toast('Editing ADMIN (demo)')">Edit</button></td></tr>
+          <tr><td class="font-bold">STAFF1</td><td>OPERATOR</td><td class="text-xs text-slate-300">Sales Add, Sales Display, Product Display</td><td>Yes</td><td><button class="btn font-semibold text-sm" style="background:#cdf138;color:#161824;padding:6px 16px" onclick="toast('Editing STAFF1 (demo)')">Edit</button></td></tr>
+        </tbody>
+      </table>
     </div>
 
     <button class="btn btn-primary" onclick="toast('Settings saved (sync interval applied live). (demo)')">Save All Settings</button>
