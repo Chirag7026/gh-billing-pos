@@ -1,17 +1,7 @@
 import { useEffect, useState } from 'react';
 import { pos, unwrap } from '../lib/api';
 import { useSession } from '../hooks/useSession';
-import { PAGE_KEYS } from '../../shared/types';
-
-const PAGE_LABELS: Record<string, string> = {
-  dashboard: 'Dashboard', 'sales-add': 'Sales Add', 'sales-display': 'Sales Display',
-  'product-add': 'Product Add', 'product-display': 'Product Display',
-  'purchase-add': 'Purchase Add', 'purchase-display': 'Purchase Display',
-  'stock-master': 'Stock Master', 'stock-adjustment': 'Stock Adjustment',
-  'low-stock': 'Low Stock', 'barcode-print': 'Barcode Print',
-  'sales-ledger': 'Sales Ledger', 'purchase-ledger': 'Purchase Ledger',
-  'supplier-ledger': 'Supplier Ledger', settings: 'Settings'
-};
+import { LEGACY_PAGE_KEYS } from '../../shared/types';
 
 export default function Settings() {
   const { session } = useSession();
@@ -29,11 +19,11 @@ export default function Settings() {
   const [restoreResult, setRestoreResult] = useState<any | null>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
-  const blankUserForm = { username: '', password: '', role: 'CASHIER', active: true, pages: [...PAGE_KEYS] as string[] };
+  const blankUserForm = { username: '', password: '', role: 'CASHIER', active: true, pages: [...LEGACY_PAGE_KEYS] as string[] };
   const [userForm, setUserForm] = useState({ ...blankUserForm });
   const resetUserForm = () => {
     setEditingUserId(null);
-    setUserForm({ username: '', password: '', role: 'CASHIER', active: true, pages: [...PAGE_KEYS] });
+    setUserForm({ username: '', password: '', role: 'CASHIER', active: true, pages: [...LEGACY_PAGE_KEYS] });
   };
 
   useEffect(() => {
@@ -334,7 +324,7 @@ export default function Settings() {
           </div>
           <div className="text-sm text-slate-400 mt-3 mb-1">Authorized Pages</div>
           <div className="flex gap-x-4 gap-y-2 flex-wrap mb-3">
-            {PAGE_KEYS.map((k) => (
+            {LEGACY_PAGE_KEYS.map((k) => (
               <label key={k} className="flex items-center gap-1.5 text-sm text-slate-200">
                 <input
                   type="checkbox"
@@ -343,7 +333,7 @@ export default function Settings() {
                   className="accent-slate-100"
                   style={{ width: 'auto', height: 15 }}
                 />
-                {PAGE_LABELS[k] || k}
+                {k}
               </label>
             ))}
           </div>
@@ -381,7 +371,7 @@ export default function Settings() {
                 <tr key={u._id}>
                   <td className="font-semibold">{u.username}</td>
                   <td>{u.role}</td>
-                  <td className="text-[12px] text-slate-300">{u.role === 'ADMIN' ? 'all pages' : (u.allowedPages || []).map((k: string) => PAGE_LABELS[k] || k).join(', ')}</td>
+                  <td className="text-[12px] text-slate-300">{u.role === 'ADMIN' ? 'all pages' : (u.allowedPages || []).join(', ')}</td>
                   <td>{u.isActive ? 'Yes' : 'No'}</td>
                   <td>
                     <button
@@ -389,7 +379,7 @@ export default function Settings() {
                       style={{ background: '#cdf138', color: '#161824' }}
                       onClick={() => {
                         setEditingUserId(u._id);
-                        setUserForm({ username: u.username, password: '', role: u.role, active: !!u.isActive, pages: u.role === 'ADMIN' ? [...PAGE_KEYS] : [...(u.allowedPages || [])] });
+                        setUserForm({ username: u.username, password: '', role: u.role, active: !!u.isActive, pages: u.role === 'ADMIN' ? [...LEGACY_PAGE_KEYS] : [...(u.allowedPages || [])] });
                       }}
                     >
                       Edit

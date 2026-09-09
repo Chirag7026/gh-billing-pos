@@ -23,6 +23,27 @@ export const PAGE_KEYS = [
   'supplier-ledger', 'settings'
 ] as const;
 
+/**
+ * Legacy coarse page keys (shown in Settings → User Management, matching
+ * existing user records) mapped onto canonical keys for permission checks.
+ */
+export const LEGACY_PAGE_KEYS = [
+  'dashboard', 'billing', 'products', 'purchase', 'accounts', 'stock',
+  'reports', 'users', 'settings'
+] as const;
+
+export const LEGACY_PAGE_MAP: Record<string, string[]> = {
+  dashboard: ['dashboard'],
+  billing: ['sales-add', 'sales-display', 'sales-ledger'],
+  products: ['product-add', 'product-display'],
+  purchase: ['purchase-add', 'purchase-display', 'purchase-ledger'],
+  accounts: ['supplier-add', 'supplier-display', 'supplier-ledger'],
+  stock: ['stock-master', 'stock-adjustment', 'low-stock', 'barcode-print'],
+  reports: ['sales-ledger', 'purchase-ledger'],
+  users: ['settings'],
+  settings: ['settings']
+};
+
 export interface ProductDTO {
   _id?: string;
   name: string;

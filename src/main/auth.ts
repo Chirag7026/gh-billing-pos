@@ -2,6 +2,10 @@ import bcrypt from 'bcryptjs';
 import { getAdminHash, setAdminHash, setSession, getSessionUser } from './config.js';
 import { User } from './models/index.js';
 import { PAGE_KEYS } from '../shared/types.js';
+// User-account data access lives in users.ts (re-exported here so existing
+// ipc.ts imports keep working unchanged).
+import { listUsers, createUser, updateUser } from './users.js';
+export { listUsers, createUser, updateUser };
 
 const ALL_PAGES = [...PAGE_KEYS];
 
@@ -85,48 +89,4 @@ export async function session() {
 
 export function currentRole(): string | null {
   return getSessionUser()?.role ?? null;
-}
-
-// ---------------- user management (ADMIN only, enforced in IPC) ----------------
-export async function listUsers() {
-  const rows = await User.find({}).sort({ username: 1 }).lean();
-  return rows.map((u: any) => ({ _id: String(u._id), username: u.username, role: u.role, allowedPages: u.allowedPages || [], isActive: u.isActive }));
-}
-
-export async function createUser(p: { username: string; password: string; role: string; allowedPages?: string[] }) {
-  const name = (p.username || '').trim().toUpperCase();
-  if (!name) throw new Error('Username required');
-  if (!p.password || p.password.length < 4) throw new Error('Password must be at least 4 characters');
-  if (!['ADMIN', 'OPERATOR', 'CASHIER'].includes(p.role)) throw new Error('Invalid role');
-  const pages = (p.allowedPages || []).filter((k) => (ALL_PAGES as string[]).includes(k));
-  try {
-    await User.create({ username: name, passwordHash: await bcrypt.hash(p.password, 10), role: p.role, allowedPages: pages, isActive: true });
-  } catch (e: any) {
-    if (String(e?.message || '').includes('duplicate')) throw new Error(`User ${name} already exists`);
-    throw e;
-  }
-  return { ok: true };
-}
-
-export async function updateUser(id: string, p: { role?: string; allowedPages?: string[]; isActive?: boolean; password?: string }) {
-  const u: any = await User.findById(id);
-  if (!u) throw new Error('User not found');
-  if (p.role) {
-    if (!['ADMIN', 'OPERATOR', 'CASHIER'].includes(p.role)) throw new Error('Invalid role');
-    u.role = p.role;
-  }
-  if (p.allowedPages) u.allowedPages = p.allowedPages.filter((k) => (ALL_PAGES as string[]).includes(k));
-  if (p.isActive !== undefined) {
-    if (u.role === 'ADMIN' && p.isActive === false) {
-      const others = await User.countDocuments({ role: 'ADMIN', isActive: true, _id: { $ne: u._id } });
-      if (others === 0) throw new Error('Cannot disable the last active ADMIN');
-    }
-    u.isActive = p.isActive;
-  }
-  if (p.password) {
-    if (p.password.length < 4) throw new Error('Password too short');
-    u.passwordHash = await bcrypt.hash(p.password, 10);
-  }
-  await u.save();
-  return { ok: true };
 }

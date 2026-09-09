@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { pos, unwrap } from '../lib/api';
+import { PAGE_KEYS, LEGACY_PAGE_MAP } from '../../shared/types';
 
 export interface Session {
   loggedIn: boolean;
@@ -26,9 +27,19 @@ export function useSession() {
   return { session, refresh };
 }
 
+/** Expand stored keys (canonical + legacy coarse keys) to canonical keys. */
+export function expandPages(pages: string[] | undefined): string[] {
+  const out = new Set<string>();
+  for (const k of pages || []) {
+    if ((PAGE_KEYS as readonly string[]).includes(k)) out.add(k);
+    for (const n of LEGACY_PAGE_MAP[k] || []) out.add(n);
+  }
+  return [...out];
+}
+
 /** RBAC: ADMIN sees everything; others see their allowedPages. */
 export function canView(session: Session, key: string): boolean {
   if (!session.loggedIn) return false;
   if (session.role === 'ADMIN') return true;
-  return (session.allowedPages || []).includes(key);
+  return expandPages(session.allowedPages).includes(key);
 }
