@@ -65,27 +65,51 @@ export default function TitleBar() {
     nav('/login');
   };
 
+  const displayName = session.username || 'Guest';
+  const initial = (displayName.trim()[0] || 'G').toUpperCase();
+
   return (
     <>
-      <div className="drag fixed top-0 left-0 right-0 h-8 z-50 flex items-center bg-slate-900/95 border-b border-slate-800 pl-3 select-none">
+      <div className="drag fixed top-0 left-0 right-0 h-8 z-50 flex items-center bg-[#161824] border-b border-slate-800 pl-3 select-none">
         <span className="text-[11px] font-bold tracking-[0.2em] text-slate-300">
           G H <span className="text-slate-500 font-normal tracking-normal">· GH Billing POS</span>
         </span>
         <span title={sync.message} className={`ml-3 w-2.5 h-2.5 rounded-full ${dot}`} />
-        <div className="no-drag fixed top-0 right-0 z-50 flex h-8 items-center gap-1 pr-1">
-          {session.loggedIn && (
-            <>
-              <span className="text-[11px] px-2 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono" title={session.username}>
-                {session.username} · {session.role}
-              </span>
-              <button onClick={() => void logout(true)} className="text-[11px] px-2 h-6 rounded bg-slate-800 hover:bg-slate-700" title="Switch User">
-                Switch User
-              </button>
-              <button onClick={() => void logout(false)} className="text-[11px] px-2 h-6 rounded bg-slate-800 hover:bg-slate-700" title="Logout">
-                Logout
-              </button>
-            </>
-          )}
+        <div className="no-drag fixed top-0 right-0 z-50 flex h-8 items-center pr-0">
+          <span
+            className="w-6 h-6 rounded-full flex items-center justify-center text-[13px] font-extrabold text-[#161824] mr-2"
+            style={{ background: '#d9a521' }}
+            title={`${displayName}${session.role ? ` · ${session.role}` : ''}`}
+          >
+            {initial}
+          </span>
+          <span className="text-[13px] text-slate-100 mr-3">{displayName}</span>
+          <button
+            onClick={() => void logout(true)}
+            className="flex items-center gap-1.5 h-8 px-2 text-[13px] text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+            title="Switch User"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 3l4 4-4 4" />
+              <path d="M21 7H8" />
+              <path d="M7 21l-4-4 4-4" />
+              <path d="M3 17h13" />
+            </svg>
+            Switch User
+          </button>
+          <button
+            onClick={() => void logout(false)}
+            className="flex items-center gap-1.5 h-8 px-2 text-[13px] text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+            title="Logout"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <path d="M16 17l5-5-5-5" />
+              <path d="M21 12H9" />
+            </svg>
+            Logout
+          </button>
+          <span className="w-px h-5 bg-slate-700 mx-2" />
           <button
             onClick={() => bridged && pos().win.minimize()}
             className="w-11 h-8 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
