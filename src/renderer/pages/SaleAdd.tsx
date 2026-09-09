@@ -357,12 +357,12 @@ export default function SaleAdd() {
       <div className="card mb-3 grid md:grid-cols-2 gap-2">
         <label className="lbl relative">Scanner input (auto-focus trap)
           <div className="flex gap-2">
-            <input ref={scanRef} data-barcode-field="true" value={scan} onChange={(e) => setScan(e.target.value)} placeholder="Scan barcode…" className="font-mono flex-1" autoFocus />
+            <input ref={scanRef} data-barcode-field="true" value={scan} onChange={(e) => setScan(e.target.value)} placeholder="SCAN BARCODE…" className="font-mono flex-1" autoFocus />
             <button className="btn-primary" onClick={submitScan}>{cartMode === 'ADD' ? 'Add' : 'Remove'}</button>
           </div>
         </label>
         <label className="lbl relative">…or type name
-          <input value={nameSearch} onChange={(e) => setNameSearch(e.target.value)} placeholder="Live search by name…" />
+          <input value={nameSearch} onChange={(e) => setNameSearch(e.target.value)} placeholder="LIVE SEARCH BY NAME…" />
           {nameOpts.length > 0 && (
             <div className="dd">
               {nameOpts.map((p) => (
