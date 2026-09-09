@@ -65,9 +65,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <NavLink
               key={l.to}
               to={l.to}
+              end
               className={({ isActive }) =>
                 `flex items-center justify-between px-2.5 py-1.5 rounded text-sm ${
-                  isActive ? 'bg-emerald-700/30 text-emerald-200' : 'text-slate-300 hover:bg-slate-800'
+                  isActive ? 'bg-emerald-800 text-emerald-100' : 'text-slate-300 hover:bg-slate-800'
                 }`
               }
             >
