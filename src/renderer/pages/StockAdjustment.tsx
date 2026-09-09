@@ -55,16 +55,16 @@ export default function StockAdjustmentPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-3">Stock Adjustment</h1>
-      <div className="card grid md:grid-cols-2 gap-3 mb-3">
-        <label className="relative">Search Barcode / Alias / Name
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Wildcard supported (* ? %)…" className="font-mono" autoFocus />
+      <h1 className="ptitle">Stock Adjustment</h1>
+      <div className="card grid md:grid-cols-12 gap-3 mb-3 items-end">
+        <label className="lbl relative md:col-span-5">Search Barcode / Alias / Name
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="WILDCARD SUPPORTED (* ? %)…" className="font-mono" autoFocus />
           {opts.length > 0 && (
-            <div className="absolute z-10 bg-slate-800 border border-slate-700 rounded w-full max-h-44 overflow-auto">
+            <div className="dd">
               {opts.map((p) => (
                 <div
                   key={p._id}
-                  className="px-2 py-1 hover:bg-slate-700 cursor-pointer text-sm"
+                  className="opt"
                   onClick={() => { setSel(p); setOpts([]); setSearch(''); }}
                 >
                   <span className="font-mono text-slate-400">{p.barcode}</span> {p.name} <b>(stock {p.cloQty})</b>
@@ -73,14 +73,12 @@ export default function StockAdjustmentPage() {
             </div>
           )}
         </label>
-        <div className="grid grid-cols-3 gap-2 items-end">
-          <div className="flex gap-1">
-            <button className={`${mode === 'ADD' ? 'btn-primary' : 'btn-ghost'} flex-1`} onClick={() => setMode('ADD')}>+ ADD</button>
-            <button className={`${mode === 'SUBTRACT' ? 'btn-danger' : 'btn-ghost'} flex-1`} onClick={() => setMode('SUBTRACT')}>− SUB</button>
-          </div>
-          <label>Quantity<input type="number" value={qty} onChange={(e) => setQty(Number(e.target.value))} /></label>
-          <label>Reason<select value={reason} onChange={(e) => setReason(e.target.value)}>{REASONS.map((r) => <option key={r}>{r}</option>)}</select></label>
+        <div className="md:col-span-2 flex gap-1">
+          <button className={`${mode === 'ADD' ? 'btn-primary' : 'btn-ghost'} flex-1`} onClick={() => setMode('ADD')}>+ ADD</button>
+          <button className={`${mode === 'SUBTRACT' ? 'btn-danger' : 'btn-ghost'} flex-1`} onClick={() => setMode('SUBTRACT')}>− SUB</button>
         </div>
+        <label className="lbl md:col-span-2">Quantity<input type="number" value={qty} onChange={(e) => setQty(Number(e.target.value))} /></label>
+        <label className="lbl md:col-span-3">Reason<select value={reason} onChange={(e) => setReason(e.target.value)}>{REASONS.map((r) => <option key={r}>{r}</option>)}</select></label>
       </div>
       {sel && (
         <div className="card mb-3 flex items-center gap-4 flex-wrap">
@@ -89,8 +87,8 @@ export default function StockAdjustmentPage() {
           <button className="btn-primary" onClick={submit}>Apply Adjustment</button>
         </div>
       )}
-      {msg && <div className="text-sm text-amber-300 mb-2">{msg}</div>}
-      <div className="card p-0 overflow-auto max-h-[40vh]">
+      {msg && <div className="msg-xs">{msg}</div>}
+      <div className="card p-0 overflow-auto max-h-40vh">
         <table className="tbl">
           <thead><tr><th>Date</th><th>Product</th><th>Type</th><th>Qty</th><th>Prev → New</th><th>Reason</th><th>By</th></tr></thead>
           <tbody>
