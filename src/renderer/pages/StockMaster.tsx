@@ -42,8 +42,8 @@ export default function StockMaster() {
             {filtered.map((r) => (
               <tr key={r._id}>
                 <td className="font-mono">{r.barcode}</td><td>{r.name}</td><td className="font-mono">{r.alias}</td>
-                <td>{r.unit}</td><td className="font-mono">{inr(r.purRate)}</td>
-                <td className="font-mono">{r.cloQty}</td><td className="font-mono">{inr(r.totalAmount)}</td>
+                <td>{r.unit}</td><td className="font-mono">₹{inr(r.purRate)}</td>
+                <td className="font-mono">{r.cloQty}</td><td className="font-mono">₹{inr(r.totalAmount)}</td>
               </tr>
             ))}
           </tbody>
