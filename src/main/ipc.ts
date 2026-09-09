@@ -5,6 +5,8 @@ import { getSettings, saveSettings } from './config.js';
 import { fmtDate, fmtTime, nextBarcode, nextBillNo, round2, wildcardToRegExp } from './util.js';
 import { exportProducts, importProducts, exportLedgers, importLedgers, exportSalesRegister, exportPurchaseRegister, exportLowStock, lowStockRows } from './excel.js';
 import { StockAdjustment } from './models/index.js';
+import { parseRptFile, sampleReceiptTemplate, sampleLabelTemplate } from './rpt.js';
+import * as fs from 'node:fs';
 import { printThermal, listWindowsPrinters, buildThermalText } from './printers/thermal.js';
 import { printLabels, buildTspl, buildZpl, buildLabelHtml, LabelJob } from './printers/label.js';
 import { syncNow, syncStatus, pauseSync, resumeSync, isSyncPaused } from './sync.js';
@@ -554,6 +556,45 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
       await ensureDb();
       await Purchase.findByIdAndDelete(id);
       return ok({ id });
+    } catch (e) {
+      return fail(e);
+    }
+  });
+
+  // ---------- print format templates (.rpt) ----------
+  ipcMain.handle('rpt:import', async (_e, kind: 'receipt' | 'label') => {
+    try {
+      const win = getWindow();
+      if (!win) throw new Error('No window');
+      const picked = await dialog.showOpenDialog(win, {
+        properties: ['openFile'],
+        filters: [{ name: 'Print template (.rpt)', extensions: ['rpt', 'json'] }]
+      });
+      if (picked.canceled || !picked.filePaths[0]) return ok({ canceled: true });
+      const tpl = parseRptFile(picked.filePaths[0]);
+      if (tpl.kind !== kind) throw new Error(`This .rpt is a "${tpl.kind}" template, but a "${kind}" one is required here.`);
+      const s = saveSettings(kind === 'receipt' ? { receiptTemplate: tpl } : { labelTemplate: tpl });
+      return ok({ canceled: false, template: tpl, file: picked.filePaths[0], active: kind === 'receipt' ? s.receiptTemplate : s.labelTemplate });
+    } catch (e) {
+      return fail(e);
+    }
+  });
+  ipcMain.handle('rpt:clear', async (_e, kind: 'receipt' | 'label') => {
+    const s = saveSettings(kind === 'receipt' ? { receiptTemplate: null } : { labelTemplate: null });
+    return ok(kind === 'receipt' ? s.receiptTemplate : s.labelTemplate);
+  });
+  ipcMain.handle('rpt:sample', async (_e, kind: 'receipt' | 'label') => {
+    try {
+      const win = getWindow();
+      if (!win) throw new Error('No window');
+      const tpl = kind === 'receipt' ? sampleReceiptTemplate() : sampleLabelTemplate();
+      const picked = await dialog.showSaveDialog(win, {
+        defaultPath: `${tpl.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.rpt`,
+        filters: [{ name: 'Print template (.rpt)', extensions: ['rpt'] }]
+      });
+      if (picked.canceled || !picked.filePath) return ok({ canceled: true });
+      fs.writeFileSync(picked.filePath, JSON.stringify(tpl, null, 2), 'utf8');
+      return ok({ canceled: false, file: picked.filePath });
     } catch (e) {
       return fail(e);
     }

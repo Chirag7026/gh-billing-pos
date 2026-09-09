@@ -205,6 +205,60 @@ export default function Settings() {
         </label>
         <label>Label Mode<select value={s.labelMode || 'TSPL'} onChange={(e) => setS({ ...s, labelMode: e.target.value })}><option>TSPL</option><option>ZPL</option><option>WINDOWS</option></select></label>
         <div className="col-span-2 text-[11px] text-slate-400">Detected Windows printers: {printers.length ? printers.join(', ') : 'none (connect a printer or use tcp://…:9100)'}</div>
+        <div className="col-span-2 border-t border-slate-800 pt-3">
+          <h3 className="font-bold mb-2">Print Format Templates (.rpt)</h3>
+          {(['receipt', 'label'] as const).map((kind) => {
+            const tpl = kind === 'receipt' ? s.receiptTemplate : s.labelTemplate;
+            return (
+              <div key={kind} className="flex items-center gap-2 mb-2 flex-wrap">
+                <span className="text-sm w-36 capitalize">{kind} format:</span>
+                <span className="text-sm font-mono text-emerald-300">{tpl?.name || 'Built-in layout'}</span>
+                <button
+                  className="btn-ghost"
+                  onClick={async () => {
+                    try {
+                      const r: any = await unwrap(pos().rpt.import(kind));
+                      if (!r.canceled) {
+                        setS((p: any) => ({ ...p, [kind === 'receipt' ? 'receiptTemplate' : 'labelTemplate']: r.template }));
+                        setMsg(`${kind} template imported: ${r.template.name}`);
+                      }
+                    } catch (e: any) {
+                      setMsg(`Import failed: ${e.message}`);
+                    }
+                  }}
+                >
+                  Import .rpt…
+                </button>
+                <button
+                  className="btn-ghost"
+                  onClick={async () => {
+                    try {
+                      const r: any = await unwrap(pos().rpt.sample(kind));
+                      if (!r.canceled) setMsg(`Sample written: ${r.file}`);
+                    } catch (e: any) {
+                      setMsg(e.message);
+                    }
+                  }}
+                >
+                  Sample
+                </button>
+                {tpl && (
+                  <button
+                    className="btn-ghost"
+                    onClick={async () => {
+                      await unwrap(pos().rpt.clear(kind));
+                      setS((p: any) => ({ ...p, [kind === 'receipt' ? 'receiptTemplate' : 'labelTemplate']: null }));
+                      setMsg(`Back to built-in ${kind} layout.`);
+                    }}
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          <p className="text-[11px] text-slate-400">Placeholders: {'{date} {time} {billNo} {customer} {subTotal} {grandTotal}'} + item columns. Invalid files are rejected with a reason.</p>
+        </div>
       </div>
 
       {unlocked ? (

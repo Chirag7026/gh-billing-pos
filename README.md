@@ -92,6 +92,11 @@ on the status badge, never thrown.
   Grand Total double-size, feed + cut). ESC/POS → raw TCP → Windows Out-Printer.
 - Label 50×25mm TSPL: exact 11-line command block from spec; ZPL + CSS page-media
   fallback included.
+- Custom `.rpt` print templates (Settings → Printer Configuration): import a
+  receipt `.rpt` (`kind: "receipt"`, width/titles/columns/footer + `{billNo}`,
+  `{grandTotal}`… placeholders) or label `.rpt` (`kind: "label"`, brand, fonts,
+  heights) to override the built-ins; Sample buttons export starter files,
+  Reset restores built-ins. Engine: `src/main/rpt.ts`.
 
 ## Project Map
 

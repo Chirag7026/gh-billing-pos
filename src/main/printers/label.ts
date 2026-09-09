@@ -4,6 +4,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { getSettings } from '../config.js';
+import { normalizeLabel } from '../rpt.js';
 
 export interface LabelJob {
   title: string; // product title, e.g. BINDI-1D-B CARD-D54
@@ -18,21 +19,31 @@ export interface LabelJob {
 // TSPL (50mm x 25mm) — exact structure from spec
 // ---------------------------------------------------------------------------
 export function buildTspl(job: LabelJob): string {
-  const brand = job.brandHeader ?? getSettings().brandHeader ?? 'G H';
+  const s = getSettings();
+  let tpl: ReturnType<typeof normalizeLabel> | null = null;
+  try {
+    const raw = (s as any).labelTemplate;
+    if (raw && typeof raw === 'object' && raw.kind === 'label') tpl = normalizeLabel(raw);
+  } catch {}
+  const brand = job.brandHeader ?? tpl?.brandHeader ?? s.brandHeader ?? 'G H';
+  const titleMax = tpl?.titleMaxLen ?? 24;
   const copies = Math.max(1, Math.min(999, job.copies ?? 1));
-  return [
+  const lines = [
     'SIZE 50 mm, 25 mm',
     'GAP 2 mm, 0 mm',
     'DIRECTION 1',
     'CLS',
     `TEXT 200,10,"3",0,1,1,"${brand}"`,
-    `TEXT 15,40,"2",0,1,1,"${truncate(job.title, 24)}"`,
-    `TEXT 360,40,"2",0,1,1,"${job.pack}"`,
-    `TEXT 140,65,"4",0,1,1,"${job.code}"`,
-    `BARCODE 30,110,"128",45,1,0,2,2,"${job.barcodeData}"`,
+    `TEXT 15,40,"2",0,1,1,"${truncate(job.title, titleMax)}"`
+  ];
+  if (tpl?.showPack !== false) lines.push(`TEXT 360,40,"2",0,1,1,"${job.pack}"`);
+  lines.push(
+    `TEXT 140,65,"${tpl?.codeFont ?? '4'}",0,1,1,"${job.code}"`,
+    `BARCODE 30,110,"128",${tpl?.barcodeHeight ?? 45},1,0,2,2,"${job.barcodeData}"`,
     `TEXT 330,120,"2",90,1,1,"${job.barcodeData}"`,
     `PRINT 1,${copies}`
-  ].join('\n');
+  );
+  return lines.join('\n');
 }
 
 export function buildZpl(job: LabelJob): string {

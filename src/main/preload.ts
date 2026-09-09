@@ -66,6 +66,11 @@ const api = {
     preview: (job: any) => ipcRenderer.invoke('labels:preview', job),
     print: (jobs: any[]) => ipcRenderer.invoke('labels:print', jobs)
   },
+  rpt: {
+    import: (kind: 'receipt' | 'label') => ipcRenderer.invoke('rpt:import', kind),
+    clear: (kind: 'receipt' | 'label') => ipcRenderer.invoke('rpt:clear', kind),
+    sample: (kind: 'receipt' | 'label') => ipcRenderer.invoke('rpt:sample', kind)
+  },
   excel: {
     dialog: (mode: 'open' | 'save', filters?: any[]) => ipcRenderer.invoke('excel:dialog', mode, filters),
     exportProducts: (filePath: string) => ipcRenderer.invoke('excel:exportProducts', filePath),

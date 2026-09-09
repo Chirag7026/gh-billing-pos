@@ -143,6 +143,8 @@ export interface AppSettings {
   autoPrintBarcode: boolean;
   beepDurationSec: number; // item-not-found tone length
   minStockDefault: '1' | 'convFactor';
+  receiptTemplate: any | null; // imported receipt .rpt (null = built-in layout)
+  labelTemplate: any | null; // imported label .rpt (null = built-in layout)
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -161,5 +163,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   autoPrintReceipt: true,
   autoPrintBarcode: false,
   beepDurationSec: 1.5,
-  minStockDefault: '1'
+  minStockDefault: '1',
+  receiptTemplate: null,
+  labelTemplate: null
 };

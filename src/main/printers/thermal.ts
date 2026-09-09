@@ -5,6 +5,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { getSettings } from '../config.js';
 import type { SaleDTO } from '../../shared/types.js';
+import { renderReceipt, normalizeReceipt, type ReceiptTemplate } from '../rpt.js';
 
 // ---------------------------------------------------------------------------
 // Thermal (ESC/POS 80mm) — exact bill format from spec
@@ -48,6 +49,28 @@ export function buildThermalText(bill: SaleDTO): string {
   push('');
   push('');
   return L.join('\n');
+}
+
+/** Active receipt template (.rpt import) or null for the built-in layout. */
+export function activeReceiptTemplate(): ReceiptTemplate | null {
+  try {
+    const t = (getSettings() as any).receiptTemplate;
+    if (t && typeof t === 'object' && t.kind === 'receipt') return normalizeReceipt(t);
+  } catch {}
+  return null;
+}
+
+/** ESC/POS print of a templated receipt (double-size grand-total line honored). */
+export function printTemplatedBillEscPos(printer: any, bill: SaleDTO, tpl: ReceiptTemplate, brand: string) {
+  for (const line of renderReceipt(bill, tpl, brand)) {
+    if (line.double) {
+      printer.size(1, 1).align('ct').text(line.text.trim()).align('lt').size(0, 0);
+    } else {
+      printer.text(line.text);
+    }
+  }
+  if (tpl.cut !== false) printer.cut();
+  else printer.feed(tpl.feedLines ?? 3);
 }
 
 /** Spec-faithful ESC/POS sequence using node-thermal-printer API shape. */
@@ -161,7 +184,9 @@ function tcpEscPosPrint(host: string, port: number, text: string): Promise<void>
 
 export async function printThermal(bill: SaleDTO): Promise<{ ok: boolean; via: string; error?: string }> {
   const s = getSettings();
-  const text = buildThermalText(bill);
+  const tpl = activeReceiptTemplate();
+  const brand = s.brandHeader || 'G H';
+  const text = tpl ? renderReceipt(bill, tpl, brand).map((l) => l.text).join('\n') : buildThermalText(bill);
   const target = parseThermalInterface(s.thermalInterface, s.thermalPrinter);
 
   // 1) Try node-thermal-printer ESC/POS (USB/network/serial)
@@ -176,9 +201,10 @@ export async function printThermal(bill: SaleDTO): Promise<{ ok: boolean; via: s
     });
     const isConnected = await printer.isPrinterConnected().catch(() => false);
     if (isConnected) {
-      printThermalBillEscPos(printer, bill);
+      if (tpl) printTemplatedBillEscPos(printer, bill, tpl, brand);
+      else printThermalBillEscPos(printer, bill);
       await printer.execute();
-      return { ok: true, via: `escpos:${target.name}` };
+      return { ok: true, via: `escpos:${target.name}${tpl ? ` [${tpl.name}]` : ''}` };
     }
   } catch (e: any) {
     // fall through to raw paths
