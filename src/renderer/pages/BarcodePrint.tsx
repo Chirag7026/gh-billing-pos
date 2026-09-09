@@ -53,23 +53,23 @@ export default function BarcodePrint() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-3">Barcode Print <span className="text-xs text-slate-400 font-normal">50mm × 25mm</span></h1>
-      <div className="card mb-3 grid md:grid-cols-2 gap-3">
-        <label className="relative">Search Barcode / Alias / Name
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Wildcard supported (* ? %)…" className="font-mono" autoFocus />
+      <h1 className="ptitle">Barcode Print <span className="text-xs text-slate-400 font-normal">50mm × 25mm</span></h1>
+      <div className="card mb-3 grid md:grid-cols-12 gap-3 items-end">
+        <label className="lbl relative md:col-span-5">Search Barcode / Alias / Name
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="WILDCARD SUPPORTED (* ? %)…" className="font-mono" autoFocus />
           {opts.length > 0 && (
-            <div className="absolute z-10 bg-slate-800 border border-slate-700 rounded w-full max-h-44 overflow-auto">
+            <div className="dd">
               {opts.map((p) => (
-                <div key={p._id} className="px-2 py-1 hover:bg-slate-700 cursor-pointer text-sm" onClick={() => pick(p)}>
+                <div key={p._id} className="opt" onClick={() => pick(p)}>
                   <span className="font-mono text-slate-400">{p.barcode}</span> {p.name}
                 </div>
               ))}
             </div>
           )}
         </label>
-        <div className="grid grid-cols-2 gap-2 items-end">
-          <label>Number of Barcode Labels to Print<input type="number" min={1} max={999} value={copies} onChange={(e) => setCopies(Number(e.target.value))} /></label>
-          <button className="btn-primary" onClick={print}>Print Batch</button>
+        <label className="lbl md:col-span-3">Number of Barcode Labels to Print<input type="number" min={1} max={999} value={copies} onChange={(e) => setCopies(Number(e.target.value))} /></label>
+        <div className="md:col-span-4 flex items-end">
+          <button className="btn-primary w-full" onClick={print}>Print Batch</button>
         </div>
       </div>
       {sel && (
@@ -85,11 +85,11 @@ export default function BarcodePrint() {
               <div style={{ fontSize: 14, letterSpacing: 4 }}>▮▮ ▮▮▮ ▮ ▮▮ {sel.barcode}</div>
               <div style={{ fontSize: 8 }}>MRP ₹{inr(sel.mrp)} · PK {sel.convFactor || 1}</div>
             </div>
-            {preview && <pre className="text-[11px] font-mono bg-slate-950 p-2 rounded mt-2 whitespace-pre-wrap">{preview}</pre>}
+            {preview && <pre className="code mt-2">{preview}</pre>}
           </div>
         </div>
       )}
-      {msg && <div className="text-sm text-amber-300">{msg}</div>}
+      {msg && <div className="msg">{msg}</div>}
     </div>
   );
 }
