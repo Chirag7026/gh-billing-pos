@@ -3,7 +3,7 @@ import * as path from 'node:path';
 import { connectDb } from './db.js';
 import { registerIpc } from './ipc.js';
 import { startSyncEngine, syncNow, pauseSync } from './sync.js';
-import { getSettings } from './config.js';
+import { getSettings, setSession } from './config.js';
 import { ensureLocalMongo, stopEmbeddedMongo, isEmbeddedRunning } from './dbManager.js';
 import { createBackup, startBackupScheduler } from './backup.js';
 
@@ -129,6 +129,9 @@ if (gotLock) {
 
     // 2) Mongoose connection, then window + engines.
     await connectDb(getSettings().mongoUri).catch((e) => console.warn('[db]', e?.message));
+    // Security: never restore a previous login — the login page opens first
+    // on every launch. MongoDB and all data are unaffected.
+    setSession(null);
     await createWindow();
     startSyncEngine(mainWindow);
     startBackupScheduler(); // silent daily snapshot, every 24h
