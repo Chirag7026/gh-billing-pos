@@ -10,22 +10,29 @@ export interface Session {
   allowedPages?: string[];
   canEditReceipt?: boolean;
   canDeleteReceipt?: boolean;
+  dbDown?: boolean;
 }
 
 const EMPTY: Session = { loggedIn: false, needsSetup: false };
 
-export function useSession() {
+export function useSession(pollMs = 0) {
   const [session, setSession] = useState<Session>(EMPTY);
   const refresh = useCallback(async () => {
     try {
-      setSession((await unwrap(pos().auth.session())) as Session);
+      const s = (await unwrap(pos().auth.session())) as Session;
+      if (s.dbDown) return false; // keep last-known session; Guard handles dbDown
+      setSession(s);
+      return true;
     } catch {
-      /* bridge unavailable */
+      return false; /* bridge unavailable */
     }
   }, []);
   useEffect(() => {
     refresh();
-  }, [refresh]);
+    if (!pollMs) return;
+    const t = setInterval(refresh, pollMs);
+    return () => clearInterval(t);
+  }, [refresh, pollMs]);
   return { session, refresh };
 }
 

@@ -77,9 +77,21 @@ export async function changePassword(username: string, oldPass: string, newPass:
 export async function session() {
   await ensureMigrated().catch(() => undefined);
   const s = getSessionUser();
-  const setup = await needsSetup().catch(() => false);
+  let setup = false;
+  try {
+    setup = await needsSetup();
+  } catch {
+    // DB unreachable — caller decides (Guard shows a retry screen).
+  }
   if (!s) return { loggedIn: false, needsSetup: setup };
-  const u: any = await User.findOne({ username: s.username }).lean().catch(() => null);
+  let u: any = null;
+  try {
+    u = await User.findOne({ username: s.username }).lean();
+  } catch {
+    // Transient DB failure: NEVER wipe the session here (a wiped session
+    // permanently logs the user out). Report dbDown so the UI can retry.
+    return { loggedIn: false, needsSetup: setup, dbDown: true, username: s.username };
+  }
   if (!u || !u.isActive) {
     setSession(null);
     return { loggedIn: false, needsSetup: setup };

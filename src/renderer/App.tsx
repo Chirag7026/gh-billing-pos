@@ -25,24 +25,51 @@ import TitleBar from './components/TitleBar';
 import { pos, unwrap } from './lib/api';
 
 function Guard({ children }: { children: JSX.Element }) {
-  const [state, setState] = useState<'loading' | 'ok' | 'login'>('loading');
+  const [state, setState] = useState<'loading' | 'ok' | 'login' | 'dbdown'>('loading');
+  const [detail, setDetail] = useState('');
   const nav = useNavigate();
-  useEffect(() => {
-    (async () => {
-      try {
-        const s: any = await unwrap(pos().auth.session());
-        if (s.loggedIn) setState('ok');
-        else {
-          setState('login');
-          nav('/login');
-        }
-      } catch {
-        setState('ok'); // browser dev without bridge — still show UI
+  const check = async () => {
+    try {
+      const s: any = await unwrap(pos().auth.session());
+      if (s.dbDown) {
+        setDetail('Local database is unreachable (MongoDB on 127.0.0.1:27017). Your login and data are safe.');
+        setState('dbdown');
+      } else if (s.loggedIn) setState('ok');
+      else {
+        setState('login');
+        nav('/login');
       }
-    })();
+    } catch {
+      setState('ok'); // browser dev without bridge — still show UI
+    }
+  };
+  useEffect(() => {
+    check();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nav]);
+  const retry = async () => {
+    setState('loading');
+    try {
+      await unwrap(pos().db.connect()).catch(() => undefined);
+    } catch {}
+    await check();
+  };
   if (state === 'loading') return <div className="p-8 text-slate-400">Loading…</div>;
   if (state === 'login') return <Navigate to="/login" replace />;
+  if (state === 'dbdown')
+    return (
+      <div className="min-h-screen flex items-center justify-center pt-8">
+        <div className="card w-full max-w-md text-center">
+          <div className="text-2xl font-extrabold">G H</div>
+          <h2 className="font-bold text-lg text-amber-300 mt-2">Database unavailable</h2>
+          <p className="text-sm text-slate-400 mt-2">{detail}</p>
+          <button className="btn-primary w-full mt-4" onClick={retry}>
+            Retry Connection
+          </button>
+          <p className="text-[11px] text-slate-500 mt-2">If this persists, restart the app — it starts its own database automatically.</p>
+        </div>
+      </div>
+    );
   return children;
 }
 

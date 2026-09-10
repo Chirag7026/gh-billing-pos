@@ -20,7 +20,7 @@ export default function TitleBar() {
   const [busy, setBusy] = useState('');
   const nav = useNavigate();
   const sync = useSyncStatus(10_000);
-  const { session, refresh } = useSession();
+  const { session, refresh } = useSession(15000);
   const bridged = typeof window !== 'undefined' && !!(window as any).pos;
 
   useEffect(() => {
