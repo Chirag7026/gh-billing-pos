@@ -27,7 +27,7 @@
 
   <div class="modal-overlay" id="bill-modal" hidden>
     <div class="card w-full max-w-2xl max-h-90vh overflow-auto">
-      <h2 class="font-bold" id="bill-title">Bill 1041 · 09/09/2026 · 12345678 CASH</h2>
+      <h2 class="font-bold" id="bill-title">Bill 1041 · 09/09/2026 10:24:11 · 12345678 CASH</h2>
       <table class="tbl mt-2">
         <thead><tr><th>#</th><th>Item</th><th>Pack</th><th>Qty</th><th>Rate</th><th>Amt</th></tr></thead>
         <tbody>
@@ -48,7 +48,7 @@
 </main>
 <script>
 function openBill(no) {
-  document.getElementById('bill-title').textContent = 'Bill ' + no + ' · 09/09/2026 · 12345678 CASH';
+  document.getElementById('bill-title').textContent = 'Bill ' + no + ' · 09/09/2026 10:24:11 · 12345678 CASH';
   document.getElementById('bill-modal').hidden = false;
 }
 document.getElementById('q').addEventListener('input', function () {

@@ -6,6 +6,8 @@ const UserSchema = new Schema(
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ['ADMIN', 'OPERATOR', 'CASHIER'], default: 'CASHIER', index: true },
     allowedPages: { type: [String], default: [] },
+    canEditReceipt: { type: Boolean, default: true },
+    canDeleteReceipt: { type: Boolean, default: true },
     isActive: { type: Boolean, default: true }
   },
   { timestamps: { createdAt: false, updatedAt: true } }
@@ -46,6 +48,7 @@ const LedgerSchema = new Schema(
     accountName: { type: String, required: true, index: true, trim: true },
     phone: { type: String, default: '' },
     city: { type: String, default: '' },
+    gstin: { type: String, default: '', index: true, trim: true, uppercase: true },
     group: { type: String, enum: ['Bank Account', 'Sundry Creditors', 'Sundry Debtors'], default: 'Sundry Debtors', index: true },
     openingBalance: { type: Number, default: 0 },
     balanceType: { type: String, enum: ['Cr', 'Dr'], default: 'Dr' },
@@ -143,3 +146,16 @@ const StockAdjustmentSchema = new Schema(
 );
 export const StockAdjustment =
   models.StockAdjustment || model('StockAdjustment', StockAdjustmentSchema);
+
+// V3.1 masters: product groups, units, custom GST% slabs.
+const MasterSchema = new Schema(
+  {
+    kind: { type: String, enum: ['group', 'unit', 'gstRate'], required: true, index: true },
+    name: { type: String, required: true, trim: true, uppercase: true },
+    code: { type: String, default: '' }, // unit short code
+    value: { type: Number, default: 0 } // gst rate numeric
+  },
+  { timestamps: { createdAt: false, updatedAt: true } }
+);
+MasterSchema.index({ kind: 1, name: 1 }, { unique: true });
+export const Master = models.Master || model('Master', MasterSchema);

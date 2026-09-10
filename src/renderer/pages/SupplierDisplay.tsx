@@ -62,31 +62,31 @@ export default function SupplierDisplay() {
 
   return (
     <div>
-      <h1 className="ptitle">Supplier / Ledger Display <span className="kbd ml-2">F8</span></h1>
+      <h1 className="ptitle">Account Master Display <span className="kbd ml-2">F8</span></h1>
       <div className="flex gap-2 mb-3 flex-wrap">
-        <input placeholder="INSTANT FILTER BY NAME…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-64" autoFocus />
-        <select value={group} onChange={(e) => setGroup(e.target.value)}>
+        <input type="text" placeholder="WILDCARD SEARCH: NAME, GSTIN, PHONE (* ? %)…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-72 font-mono" autoFocus id="q" />
+        <select value={group} onChange={(e) => setGroup(e.target.value)} id="grp" style={{ width: 180 }}>
           <option value="">All groups</option>
           <option>Bank Account</option>
           <option>Sundry Creditors</option>
           <option>Sundry Debtors</option>
         </select>
-        <button className="btn-ghost" onClick={() => doExcel('export')}>Excel Export</button>
-        <button className="btn-ghost" onClick={() => doExcel('import')}>Excel Import</button>
+        <button className="btn btn-ghost" onClick={() => doExcel('export')}>Excel Export</button>
+        <button className="btn btn-ghost" onClick={() => doExcel('import')}>Excel Import</button>
         <span className="text-xs text-slate-400 ml-auto">Dr ₹{inr(totals.dr)} · Cr ₹{inr(totals.cr)} · Net ₹{inr(totals.net)}</span>
       </div>
-      {msg && <div className="text-xs text-amber-300 mb-2">{msg}</div>}
-      <div className="card p-0 overflow-auto max-h-[65vh]">
-        <table className="tbl">
-          <thead><tr><th>Account</th><th>Phone</th><th>City</th><th>Group</th><th>Op.Bal</th><th>C/D</th><th>Current</th><th></th></tr></thead>
+      {msg && <div className="msg-xs">{msg}</div>}
+      <div className="card p-0 overflow-auto max-h-65vh">
+        <table className="tbl" id="st">
+          <thead><tr><th>Account</th><th>Phone</th><th>City</th><th>GSTIN</th><th>Group</th><th>Op.Bal</th><th>C/D</th><th>Current</th><th></th></tr></thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r._id}>
-                <td>{r.accountName}</td><td>{r.phone}</td><td>{r.city}</td><td>{r.group}</td>
-                <td className="font-mono">₹{inr(r.openingBalance)}</td><td>{r.balanceType}</td><td className="font-mono">₹{inr(r.currentBalance)}</td>
+                <td>{r.accountName}</td><td>{r.phone}</td><td>{r.city}</td><td className="font-mono">{r.gstin}</td><td>{r.group}</td>
+                <td>₹{inr(r.openingBalance)}</td><td>{r.balanceType}</td><td>₹{inr(r.currentBalance)}</td>
                 <td className="whitespace-nowrap">
-                  <button className="btn-ghost mr-1" onClick={() => setEditing({ ...r })}>Edit</button>
-                  <button className="btn-danger" onClick={async () => { if (confirm(`Delete ${r.accountName}?`)) { await unwrap(pos().ledgers.remove(r._id)); load(); } }}>Del</button>
+                  <button className="btn btn-ghost mr-1" onClick={() => setEditing({ ...r })}>Edit</button>
+                  <button className="btn btn-danger" onClick={async () => { if (confirm(`Delete ${r.accountName}?`)) { await unwrap(pos().ledgers.remove(r._id)); load(); } }}>Del</button>
                 </td>
               </tr>
             ))}
@@ -94,16 +94,17 @@ export default function SupplierDisplay() {
         </table>
       </div>
       {editing && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4">
+        <div className="modal-overlay" id="sup-modal">
           <div className="card w-full max-w-lg grid grid-cols-2 gap-2">
-            <h2 className="col-span-2 font-bold">Inline editor — {editing.accountName}</h2>
-            <label className="lbl">Account<input value={editing.accountName} onChange={(e) => setEditing({ ...editing, accountName: e.target.value })} /></label>
-            <label className="lbl">Phone<input value={editing.phone || ''} onChange={(e) => setEditing({ ...editing, phone: e.target.value })} /></label>
-            <label className="lbl">City<input value={editing.city || ''} onChange={(e) => setEditing({ ...editing, city: e.target.value })} /></label>
+            <h2 className="font-bold col-span-2" id="sup-title">Inline editor — {editing.accountName}</h2>
+            <label className="lbl">Account<input type="text" value={editing.accountName} onChange={(e) => setEditing({ ...editing, accountName: e.target.value })} /></label>
+            <label className="lbl">Phone<input type="text" value={editing.phone || ''} onChange={(e) => setEditing({ ...editing, phone: e.target.value })} /></label>
+            <label className="lbl">GSTIN<input type="text" value={editing.gstin || ''} onChange={(e) => setEditing({ ...editing, gstin: e.target.value.toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 15) })} className="font-mono" /></label>
+            <label className="lbl">City<input type="text" value={editing.city || ''} onChange={(e) => setEditing({ ...editing, city: e.target.value })} /></label>
             <label className="lbl">Group<select value={editing.group} onChange={(e) => setEditing({ ...editing, group: e.target.value })}><option>Bank Account</option><option>Sundry Creditors</option><option>Sundry Debtors</option></select></label>
             <label className="lbl">Opening<input type="number" value={editing.openingBalance} onChange={(e) => setEditing({ ...editing, openingBalance: Number(e.target.value) })} /></label>
             <label className="lbl">Cr/Dr<select value={editing.balanceType} onChange={(e) => setEditing({ ...editing, balanceType: e.target.value })}><option>Dr</option><option>Cr</option></select></label>
-            <div className="col-span-2 flex gap-2"><button className="btn-primary" onClick={saveEdit}>Save</button><button className="btn-ghost" onClick={() => setEditing(null)}>Close</button></div>
+            <div className="col-span-2 flex gap-2"><button className="btn btn-primary" onClick={saveEdit}>Save</button><button className="btn btn-ghost" onClick={() => setEditing(null)}>Close</button></div>
           </div>
         </div>
       )}

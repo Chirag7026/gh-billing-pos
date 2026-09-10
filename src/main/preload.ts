@@ -110,6 +110,11 @@ const api = {
     low: () => ipcRenderer.invoke('stock:low'),
     adjust: (p: any) => ipcRenderer.invoke('stock:adjust', p),
     adjustments: (limit?: number) => ipcRenderer.invoke('stock:adjustments', { limit })
+  },
+  masters: {
+    list: (kind: string) => ipcRenderer.invoke('masters:list', { kind }),
+    add: (p: any) => ipcRenderer.invoke('masters:add', p),
+    remove: (id: string) => ipcRenderer.invoke('masters:remove', id)
   }
 };
 

@@ -320,27 +320,27 @@ export default function SaleAdd() {
       <div className="card mb-3 grid grid-cols-2 md:grid-cols-6 gap-2 items-end">
         <div className="flex gap-1">
           {(['Cash', 'Debit'] as const).map((t) => (
-            <button key={t} className={`${paymentType === t ? 'btn-primary' : 'btn-ghost'} flex-1`} onClick={() => setPaymentType(t)}>{t}</button>
+            <button key={t} className={`${paymentType === t ? 'btn btn-primary' : 'btn btn-ghost'} flex-1`} onClick={() => setPaymentType(t)}>{t}</button>
           ))}
         </div>
         <div className="flex gap-1">
           {(['Wholesale', 'Retail'] as const).map((m) => (
-            <button key={m} className={`${pricingMode === m ? 'btn-amber' : 'btn-ghost'} flex-1`} onClick={() => toggleMode(m)}>{m === 'Wholesale' ? 'WH' : 'RT'}</button>
+            <button key={m} className={`${pricingMode === m ? 'btn btn-amber' : 'btn btn-ghost'} flex-1`} onClick={() => toggleMode(m)}>{m === 'Wholesale' ? 'WH' : 'RT'}</button>
           ))}
         </div>
         <div className="col-span-2">
           <button
             onClick={() => setCartMode((m) => (m === 'ADD' ? 'REMOVE' : 'ADD'))}
             title="Toggle with F10 or Space"
-            className={cartMode === 'ADD' ? 'btn-primary w-full' : 'btn-danger w-full'}
+            className={cartMode === 'ADD' ? 'btn btn-primary w-full' : 'btn btn-danger w-full'}
           >
             {cartMode === 'ADD' ? '+ ADD MODE' : '− REMOVE MODE'} <span className="kbd ml-1">F10</span>
           </button>
         </div>
-        <label className="lbl">Bill No<input value={billNo} onChange={(e) => setBillNo(e.target.value)} className="font-mono" /></label>
-        <label className="lbl">Date<input value={date} onChange={(e) => setDate(e.target.value)} /></label>
+        <label className="lbl">Bill No<input type="text" value={billNo} onChange={(e) => setBillNo(e.target.value)} className="mono" /></label>
+        <label className="lbl">Date<input type="text" value={date} onChange={(e) => setDate(e.target.value)} /></label>
         <label className="lbl col-span-2 relative">Customer
-          <input value={custSearch || customerName} onChange={(e) => { setCustSearch(e.target.value); setCustomerName(e.target.value); }} placeholder="Search / quick-add…" />
+          <input type="text" value={custSearch || customerName} onChange={(e) => { setCustSearch(e.target.value); setCustomerName(e.target.value); }} placeholder="Search / quick-add…" />
           {custOpts.length > 0 && (
             <div className="dd">
               {custOpts.map((c) => (
@@ -357,17 +357,17 @@ export default function SaleAdd() {
       <div className="card mb-3 grid md:grid-cols-2 gap-2">
         <label className="lbl relative">Scanner input (auto-focus trap)
           <div className="flex gap-2">
-            <input ref={scanRef} data-barcode-field="true" value={scan} onChange={(e) => setScan(e.target.value)} placeholder="SCAN BARCODE…" className="font-mono flex-1" autoFocus />
-            <button className="btn-primary" onClick={submitScan}>{cartMode === 'ADD' ? 'Add' : 'Remove'}</button>
+            <input ref={scanRef} data-barcode-field="true" type="text" value={scan} onChange={(e) => setScan(e.target.value)} placeholder="Scan barcode…" className="mono flex-1" autoFocus />
+            <button className="btn btn-primary" onClick={submitScan}>{cartMode === 'ADD' ? 'Add' : 'Remove'}</button>
           </div>
         </label>
         <label className="lbl relative">…or type name
-          <input value={nameSearch} onChange={(e) => setNameSearch(e.target.value)} placeholder="LIVE SEARCH BY NAME…" />
+          <input type="text" value={nameSearch} onChange={(e) => setNameSearch(e.target.value)} placeholder="Live search by name…" />
           {nameOpts.length > 0 && (
             <div className="dd">
               {nameOpts.map((p) => (
                 <div key={p._id} className="opt" onClick={() => applyProduct(p)}>
-                  <span className="font-mono text-slate-400">{p.barcode}</span> {p.name} <b>₹{inr(rateFor(p))}</b>
+                  <span className="mono text-slate-400">{p.barcode}</span> {p.name} <b>₹{inr(rateFor(p))}</b>
                 </div>
               ))}
             </div>
@@ -382,11 +382,11 @@ export default function SaleAdd() {
             {rows.map((r, i) => (
               <tr key={r.key}>
                 <td>{i + 1}</td>
-                <td><div>{r.name}</div><div className="text-[11px] font-mono text-slate-400">{r.barcode}</div></td>
+                <td><div>{r.name}</div><div className="text-slate-400 mono" style={{ fontSize: 11 }}>{r.barcode}</div></td>
                 <td><input type="number" value={r.pack} onChange={(e) => patchRow(r.key, 'pack', Number(e.target.value))} className="w-16" /></td>
                 <td><input type="number" value={r.qty} onChange={(e) => patchRow(r.key, 'qty', Number(e.target.value))} className="w-20" /></td>
                 <td><input type="number" value={r.rate} onChange={(e) => patchRow(r.key, 'rate', Number(e.target.value))} className="w-24" /></td>
-                <td className="font-mono">{inr(r.amount)}</td>
+                <td className="mono">{inr(r.amount)}</td>
               </tr>
             ))}
             {!rows.length && <tr><td colSpan={6} className="text-center text-slate-500 py-6">Scan first item to begin…</td></tr>}
@@ -395,13 +395,13 @@ export default function SaleAdd() {
       </div>
 
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="text-sm">Items <b>{totals.items}</b> · PackQty <b>{totals.packQty}</b> · Units <b>{totals.units.toFixed(2)}</b> · Sub <b className="font-mono">₹{inr(totals.sub)}</b></div>
-        <div className="text-xl font-extrabold ml-auto">Grand Total <span className="font-mono text-emerald-300">₹{inr(totals.sub)}</span></div>
+        <div className="text-sm">Items <b>{totals.items}</b> · PackQty <b>{totals.packQty}</b> · Units <b>{totals.units.toFixed(2)}</b> · Sub <b className="mono">₹{inr(totals.sub)}</b></div>
+        <div className="text-xl font-extrabold ml-auto">Grand Total <span className="mono text-emerald-300">₹{inr(totals.sub)}</span></div>
       </div>
       <div className="flex gap-2 mt-3">
-        <button className="btn-primary" onClick={() => save(true)}>Save & Print <span className="kbd ml-1">F9</span></button>
-        <button className="btn-ghost" onClick={() => save(false)}>Save Only</button>
-        <button className="btn-danger" onClick={resetForm}>Cancel</button>
+        <button className="btn btn-primary" onClick={() => save(true)}>Save & Print <span className="kbd ml-1">F9</span></button>
+        <button className="btn btn-ghost" onClick={() => save(false)}>Save Only</button>
+        <button className="btn btn-danger" onClick={resetForm}>Cancel</button>
       </div>
       {msg && <div className="msg">{msg}</div>}
     </div>

@@ -50,7 +50,7 @@ export async function login(username: string, password: string) {
   const ok = await bcrypt.compare(password || '', u.passwordHash);
   if (!ok) throw new Error('Invalid password');
   setSession({ username: u.username, role: u.role });
-  return { ok: true, username: u.username, role: u.role, allowedPages: u.allowedPages };
+  return { ok: true, username: u.username, role: u.role, allowedPages: u.allowedPages, canEditReceipt: u.canEditReceipt !== false, canDeleteReceipt: u.canDeleteReceipt !== false };
 }
 
 /** Logout / Switch User: clears the app session only — MongoDB keeps running. */
@@ -84,7 +84,7 @@ export async function session() {
     setSession(null);
     return { loggedIn: false, needsSetup: setup };
   }
-  return { loggedIn: true, needsSetup: false, username: u.username, role: u.role, allowedPages: u.allowedPages || [] };
+  return { loggedIn: true, needsSetup: false, username: u.username, role: u.role, allowedPages: u.allowedPages || [], canEditReceipt: u.canEditReceipt !== false, canDeleteReceipt: u.canDeleteReceipt !== false };
 }
 
 export function currentRole(): string | null {

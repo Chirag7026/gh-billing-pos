@@ -8,6 +8,8 @@ export interface Session {
   username?: string;
   role?: string;
   allowedPages?: string[];
+  canEditReceipt?: boolean;
+  canDeleteReceipt?: boolean;
 }
 
 const EMPTY: Session = { loggedIn: false, needsSetup: false };

@@ -65,6 +65,20 @@ pre.code { @apply text-[11px] font-mono bg-slate-950 p-2 rounded whitespace-pre-
 .max-h-40vh { max-height: 40vh; }
 .max-h-60vh { max-height: 60vh; }
 .max-h-65vh { max-height: 65vh; }
+.max-h-90vh { max-height: 90vh; }
+.mono { @apply font-mono; }
+.modal-overlay { @apply fixed inset-0 bg-black/60 flex items-center justify-center p-4; }
+
+/* Dashboard tiles + login shell (ui-preview parity) */
+.tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+@media (min-width: 768px) { .tiles { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1024px) { .tiles { grid-template-columns: repeat(4, 1fr); } }
+.tile { transition: border-color 0.15s; }
+.tile:hover { border-color: #059669; }
+.tile .t-head { display: flex; align-items: center; justify-content: space-between; }
+.tile .t-title { font-weight: 700; }
+.tile .t-desc { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+.bare-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 32px 16px 16px; }
 
 /* Frameless-window drag regions (Electron custom TitleBar) */
 .drag { -webkit-app-region: drag; app-region: drag; }

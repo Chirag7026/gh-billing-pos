@@ -14,6 +14,7 @@
     <span class="text-xs text-slate-400">Available Qty ≤ Minimum Stock · 3 items</span>
     <button class="btn btn-ghost ml-auto" onclick="toast('Exported 3 rows (.xls) → C:\\GH-Backups\\low-stock.xls (demo)')">Export Low Stock (.xls)</button>
   </div>
+  <div class="msg-xs" id="pagemsg" hidden></div>
   <div class="card p-0 overflow-auto max-h-65vh">
     <table class="tbl">
       <thead><tr><th>Product Name</th><th>Barcode</th><th>Alias</th><th>Group</th><th>Available Qty</th><th>Minimum Stock</th><th>Unit</th></tr></thead>
@@ -21,6 +22,7 @@
         <tr><td>SURF EXCEL 1KG</td><td class="mono">1011</td><td class="mono">1011</td><td>GENERAL</td><td class="mono">3</td><td class="mono">10</td><td>Pcs</td></tr>
         <tr><td>TATA TEA GOLD 250G</td><td class="mono">1015</td><td class="mono">1015</td><td>GENERAL</td><td class="mono">5</td><td class="mono">12</td><td>Pcs</td></tr>
         <tr><td>FORTUNE MUSTARD OIL 1L</td><td class="mono">1005</td><td class="mono">1005</td><td>GENERAL</td><td class="mono">8</td><td class="mono">12</td><td>Pcs</td></tr>
+        <tr id="empty-row" hidden><td colspan="7" class="text-center text-slate-500 py-6">No low-stock items.</td></tr>
       </tbody>
     </table>
   </div>

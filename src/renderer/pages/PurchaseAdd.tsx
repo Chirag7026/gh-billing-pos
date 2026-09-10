@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { pos, unwrap, inr, num } from '../lib/api';
 import { useScanner } from '../hooks/useScanner';
 import { setUnsaved } from '../lib/unsaved';
@@ -9,6 +9,7 @@ import { prefs, beepSeconds } from '../lib/prefs';
 interface Row { key: string; productId?: string; name: string; barcode: string; qty: number; purRate: number; mrp: number; whRate: number; rtRate: number; amount: number; }
 
 export default function PurchaseAdd() {
+  const nav = useNavigate();
   const [params, setParams] = useSearchParams();
   const [editingId, setEditingId] = useState<string | undefined>(undefined);
   const [supplierName, setSupplierName] = useState('');
@@ -145,7 +146,7 @@ export default function PurchaseAdd() {
         const p = await prefs();
         if (p.autoPrintBarcode) {
           const m: any = {};
-          rows.forEach((r) => (m[r.key] = 1));
+          rows.forEach((r) => (m[r.key] = Math.max(1, Math.round(num(r.qty)) || 1)));
           setLabelCounts(m);
           setLabelModal(true);
           return;
@@ -153,23 +154,22 @@ export default function PurchaseAdd() {
       } catch {}
     }
     try {
-      let printLabels: any[] | undefined;
-      if (withLabels) {
-        printLabels = rows.map((r) => ({
-          title: r.name.slice(0, 24),
-          pack: 1,
-          code: r.barcode,
-          barcodeData: r.barcode,
-          copies: labelCounts[r.key] ?? 1
-        }));
-      }
+      // V3.1: Save & Print Barcode transfers all line items to Barcode Print
+      // (counts default to purchased qty, adjustable in the modal) instead of
+      // printing blindly.
+      const batchSnapshot = rows.map((r) => ({ barcode: r.barcode, name: r.name, qty: labelCounts[r.key] ?? num(r.qty) }));
       const bill = { _id: editingId, purchaseBillNo: billNo, date, supplierId, supplierName, paymentType, items: rows.map(({ key: _k, ...r }) => r) };
-      const r: any = await unwrap(pos().purchases.save(bill, printLabels));
-      setMsg(`Saved purchase ${r.bill.purchaseBillNo} · ₹${inr(r.bill.totalPurchaseAmount)}${withLabels ? ' · labels sent' : ''}`);
+      const r: any = await unwrap(pos().purchases.save(bill, undefined));
       setRows([]);
       setEditingId(undefined);
       setBillNo('');
       setLabelModal(false);
+      if (withLabels) {
+        sessionStorage.setItem('gh-label-batch', JSON.stringify(batchSnapshot));
+        nav('/barcode/print?batch=1');
+      } else {
+        setMsg(`Saved purchase ${r.bill.purchaseBillNo} · ₹${inr(r.bill.totalPurchaseAmount)}`);
+      }
     } catch (e: any) {
       setMsg(e.message);
     }
@@ -186,7 +186,7 @@ export default function PurchaseAdd() {
       <h1 className="ptitle">Purchase Add + Barcode <span className="kbd ml-2">F5</span></h1>
       <div className="card mb-3 grid grid-cols-2 md:grid-cols-5 gap-2 items-end">
         <label className="lbl relative col-span-2">Supplier
-          <input value={supSearch || supplierName} onChange={(e) => { setSupSearch(e.target.value); setSupplierName(e.target.value); }} placeholder="Search supplier…" />
+          <input type="text" value={supSearch || supplierName} onChange={(e) => { setSupSearch(e.target.value); setSupplierName(e.target.value); }} placeholder="Search supplier…" />
           {supOpts.length > 0 && (
             <div className="dd">
               {supOpts.map((c) => (
@@ -195,19 +195,19 @@ export default function PurchaseAdd() {
             </div>
           )}
         </label>
-        <label className="lbl">Bill No<input value={billNo} onChange={(e) => setBillNo(e.target.value)} className="font-mono" /></label>
+        <label className="lbl">Bill No<input type="text" value={billNo} onChange={(e) => setBillNo(e.target.value)} className="mono" /></label>
         <label className="lbl">Date<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
-        <div className="flex gap-1">{(['Cash', 'Debit'] as const).map((t) => <button key={t} className={`${paymentType === t ? 'btn-primary' : 'btn-ghost'} flex-1`} onClick={() => setPaymentType(t)}>{t}</button>)}</div>
+        <div className="flex gap-1">{(['Cash', 'Debit'] as const).map((t) => <button key={t} className={`${paymentType === t ? 'btn btn-primary' : 'btn btn-ghost'} flex-1`} onClick={() => setPaymentType(t)}>{t}</button>)}</div>
       </div>
 
       <div className="card mb-3 grid md:grid-cols-2 gap-2">
-        <label className="lbl">Scan barcode<input ref={scanRef} data-barcode-field="true" value={scan} onChange={(e) => setScan(e.target.value)} className="font-mono" autoFocus /></label>
+        <label className="lbl">Scan barcode<input ref={scanRef} data-barcode-field="true" type="text" value={scan} onChange={(e) => setScan(e.target.value)} className="mono" autoFocus /></label>
         <label className="lbl relative">…or type name
-          <input value={nameSearch} onChange={(e) => setNameSearch(e.target.value)} />
+          <input type="text" value={nameSearch} onChange={(e) => setNameSearch(e.target.value)} />
           {nameOpts.length > 0 && (
             <div className="dd">
               {nameOpts.map((p) => (
-                <div key={p._id} className="opt" onClick={() => addProduct(p)}><span className="font-mono text-slate-400">{p.barcode}</span> {p.name}</div>
+                <div key={p._id} className="opt" onClick={() => addProduct(p)}><span className="mono text-slate-400">{p.barcode}</span> {p.name}</div>
               ))}
             </div>
           )}
@@ -221,15 +221,15 @@ export default function PurchaseAdd() {
           <tbody>
             {rows.map((r) => (
               <tr key={r.key}>
-                <td className="font-mono">{r.barcode}</td>
-                <td><input value={r.name} onChange={(e) => patch(r.key, 'name', e.target.value)} className="w-44" /></td>
+                <td className="mono">{r.barcode}</td>
+                <td><input type="text" value={r.name} onChange={(e) => patch(r.key, 'name', e.target.value)} className="w-44" /></td>
                 <td><input type="number" value={r.qty} onChange={(e) => patch(r.key, 'qty', Number(e.target.value))} className="w-16" /></td>
                 <td><input type="number" value={r.purRate} onChange={(e) => patch(r.key, 'purRate', Number(e.target.value))} className="w-20" /></td>
                 <td><input type="number" value={r.mrp} onChange={(e) => patch(r.key, 'mrp', Number(e.target.value))} className="w-20" /></td>
                 <td><input type="number" value={r.whRate} onChange={(e) => patch(r.key, 'whRate', Number(e.target.value))} className="w-20" /></td>
                 <td><input type="number" value={r.rtRate} onChange={(e) => patch(r.key, 'rtRate', Number(e.target.value))} className="w-20" /></td>
-                <td className="font-mono">₹{inr(r.amount)}</td>
-                <td><button className="btn-danger" onClick={() => { setRows((p) => p.filter((x) => x.key !== r.key)); previewLabel(r); }}>✕</button></td>
+                <td className="mono">₹{inr(r.amount)}</td>
+                <td><button className="btn btn-danger" onClick={() => { setRows((p) => p.filter((x) => x.key !== r.key)); previewLabel(r); }}>✕</button></td>
               </tr>
             ))}
             {!rows.length && <tr><td colSpan={9} className="text-center text-slate-500 py-6">Scan or search to add purchase rows…</td></tr>}
@@ -238,29 +238,29 @@ export default function PurchaseAdd() {
       </div>
 
       <div className="flex items-center gap-3">
-        <div>Total Purchase <b className="font-mono text-emerald-300 text-xl">₹{inr(total)}</b></div>
+        <div>Total Purchase <b className="mono text-emerald-300 text-xl">₹{inr(total)}</b></div>
         <div className="ml-auto flex gap-2">
-          <button className="btn-ghost" onClick={() => save(false)}>Save</button>
-          <button className="btn-primary" onClick={() => { const m: any = {}; rows.forEach((r) => (m[r.key] = 1)); setLabelCounts(m); setLabelModal(true); }}>Save & Print Barcode</button>
+          <button className="btn btn-ghost" onClick={() => save(false)}>Save</button>
+          <button className="btn btn-primary" onClick={() => { const m: any = {}; rows.forEach((r) => (m[r.key] = Math.max(1, Math.round(num(r.qty)) || 1))); setLabelCounts(m); setLabelModal(true); }}>Save & Print Barcode</button>
         </div>
       </div>
       {msg && <div className="msg">{msg}</div>}
 
       {labelModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4">
-          <div className="card w-full max-w-xl max-h-[90vh] overflow-auto">
+        <div className="modal-overlay" id="label-modal">
+          <div className="card w-full max-w-xl max-h-90vh overflow-auto">
             <h2 className="font-bold mb-2">Labels per item (50mm × 25mm)</h2>
             {rows.map((r) => (
-              <div key={r.key} className="flex items-center gap-2 py-1 border-b border-slate-800">
-                <span className="font-mono text-xs w-20">{r.barcode}</span>
+              <div key={r.key} className="flex items-center gap-2 py-1 border border-slate-800">
+                <span className="mono text-xs w-20">{r.barcode}</span>
                 <span className="text-sm flex-1 truncate">{r.name}</span>
                 <input type="number" min={1} max={999} value={labelCounts[r.key] ?? 1} onChange={(e) => setLabelCounts((p) => ({ ...p, [r.key]: Math.max(1, Number(e.target.value)) }))} className="w-20" />
               </div>
             ))}
-            {labelPreview && <pre className="text-[11px] font-mono bg-slate-950 p-2 rounded mt-2 whitespace-pre-wrap">{labelPreview}</pre>}
+            {labelPreview && <pre className="code mt-2">{labelPreview}</pre>}
             <div className="flex gap-2 mt-3">
-              <button className="btn-primary" onClick={() => save(true)}>Print batch</button>
-              <button className="btn-ghost" onClick={() => setLabelModal(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={() => save(true)}>Save & Continue to Print</button>
+              <button className="btn btn-ghost" onClick={() => setLabelModal(false)}>Cancel</button>
             </div>
           </div>
         </div>

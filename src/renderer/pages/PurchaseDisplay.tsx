@@ -23,19 +23,19 @@ export default function PurchaseDisplay() {
   }, []);
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-3">Purchase Display <span className="kbd ml-2">F6</span></h1>
-      <input placeholder="Search bill no or supplier…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-72 mb-3" autoFocus />
-      {msg && <div className="text-xs text-amber-300 mb-2">{msg}</div>}
-      <div className="card p-0 overflow-auto max-h-[65vh]">
-        <table className="tbl">
+      <h1 className="ptitle">Purchase Display <span className="kbd ml-2">F6</span></h1>
+      <input type="text" placeholder="Search bill no or supplier…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-72 mb-3" autoFocus id="q" />
+      {msg && <div className="msg-xs">{msg}</div>}
+      <div className="card p-0 overflow-auto max-h-65vh">
+        <table className="tbl" id="pt">
           <thead><tr><th>Bill No</th><th>Date</th><th>Supplier</th><th>C/D</th><th>Items</th><th>Total</th><th></th></tr></thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r._id}>
-                <td className="font-mono">{r.purchaseBillNo}</td><td>{new Date(r.date).toLocaleDateString('en-IN')}</td>
+                <td className="mono">{r.purchaseBillNo}</td><td>{new Date(r.date).toLocaleDateString('en-IN')}</td>
                 <td>{r.supplierName}</td><td>{r.paymentType}</td><td>{r.items?.length}</td>
-                <td className="font-mono">{inr(r.totalPurchaseAmount)}</td>
-                <td><button className="btn-amber mr-1" onClick={() => nav(`/purchase/add?edit=${r._id}`)}>Edit</button><button className="btn-danger" onClick={async () => { if (confirm('Delete purchase? (stock not auto-reversed)')) { await unwrap(pos().purchases.remove(r._id)); load(); } }}>Del</button></td>
+                <td className="mono">{inr(r.totalPurchaseAmount)}</td>
+                <td className="whitespace-nowrap"><button className="btn btn-amber mr-1" onClick={() => nav(`/purchase/add?edit=${r._id}`)}>Edit</button><button className="btn btn-danger" onClick={async () => { if (confirm('Delete purchase? (stock not auto-reversed)')) { await unwrap(pos().purchases.remove(r._id)); load(); } }}>Del</button></td>
               </tr>
             ))}
           </tbody>

@@ -9,8 +9,8 @@ const tiles = [
   { to: '/products', key: 'product-display', t: 'Product Display', k: 'F4', d: 'Wildcard + inline edit' },
   { to: '/purchase/add', key: 'purchase-add', t: 'Purchase Add', k: 'F5', d: 'Stock in + labels' },
   { to: '/purchase', key: 'purchase-display', t: 'Purchase Display', k: 'F6', d: 'History + edit' },
-  { to: '/suppliers/add', key: 'supplier-add', t: 'Supplier Add', k: 'F7', d: 'Ledgers quick-add' },
-  { to: '/suppliers', key: 'supplier-display', t: 'Supplier Display', k: 'F8', d: 'Filter + balances' },
+  { to: '/suppliers/add', key: 'supplier-add', t: 'Account Master Add', k: 'F7', d: 'Ledgers quick-add' },
+  { to: '/suppliers', key: 'supplier-display', t: 'Account Master Display', k: 'F8', d: 'Filter + balances' },
   { to: '/stock', key: 'stock-master', t: 'Stock Master', k: '', d: 'Live inventory + total' },
   { to: '/stock/adjust', key: 'stock-adjustment', t: 'Stock Adjustment', k: '', d: 'Audit-tracked corrections' },
   { to: '/stock/low', key: 'low-stock', t: 'Low Stock Register', k: '', d: 'Below minimum + .xls' },
@@ -28,19 +28,19 @@ export default function Dashboard() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">Quick Launch</h1>
+        <h1 className="ptitle" style={{ margin: 0 }}>Quick Launch</h1>
         <div className="text-xs text-slate-400" title={sync.message}>
           Live sync: <span className={sync.ok ? 'text-emerald-300' : 'text-amber-300'}>{sync.message}</span>
         </div>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className="tiles">
         {show.map((t) => (
-          <Link key={t.to} to={t.to} className="card hover:border-emerald-600 transition">
-            <div className="flex items-center justify-between">
-              <div className="font-bold">{t.t}</div>
+          <Link key={t.to} to={t.to} className="card tile">
+            <div className="t-head">
+              <div className="t-title">{t.t}</div>
               {t.k && <span className="kbd">{t.k}</span>}
             </div>
-            <div className="text-xs text-slate-400 mt-1">{t.d}</div>
+            <div className="t-desc">{t.d}</div>
           </Link>
         ))}
       </div>

@@ -29,20 +29,20 @@ export default function LowStock() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-3">Low Stock Register</h1>
+      <h1 className="ptitle">Low Stock Register</h1>
       <div className="flex gap-2 mb-3 items-center">
         <span className="text-xs text-slate-400">Available Qty ≤ Minimum Stock · {rows.length} items</span>
-        <button className="btn-ghost ml-auto" onClick={exportXls}>Export Low Stock (.xls)</button>
+        <button className="btn btn-ghost ml-auto" onClick={exportXls}>Export Low Stock (.xls)</button>
       </div>
-      {msg && <div className="text-xs text-amber-300 mb-2">{msg}</div>}
-      <div className="card p-0 overflow-auto max-h-[65vh]">
+      {msg && <div className="msg-xs">{msg}</div>}
+      <div className="card p-0 overflow-auto max-h-65vh">
         <table className="tbl">
           <thead><tr><th>Product Name</th><th>Barcode</th><th>Alias</th><th>Group</th><th>Available Qty</th><th>Minimum Stock</th><th>Unit</th></tr></thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r._id}>
-                <td>{r.name}</td><td className="font-mono">{r.barcode}</td><td className="font-mono">{r.alias}</td>
-                <td>{r.group}</td><td className="font-mono">{r.cloQty}</td><td className="font-mono">{r.minStock}</td><td>{r.unit}</td>
+                <td>{r.name}</td><td className="mono">{r.barcode}</td><td className="mono">{r.alias}</td>
+                <td>{r.group}</td><td className="mono">{r.cloQty}</td><td className="mono">{r.minStock}</td><td>{r.unit}</td>
               </tr>
             ))}
             {!rows.length && <tr><td colSpan={7} className="text-center text-slate-500 py-6">No low-stock items.</td></tr>}

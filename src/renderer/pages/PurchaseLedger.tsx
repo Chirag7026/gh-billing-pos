@@ -33,21 +33,21 @@ export default function PurchaseLedger() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-3">Purchase Ledger</h1>
+      <h1 className="ptitle">Purchase Ledger</h1>
       <div className="flex gap-2 mb-3 items-end flex-wrap">
-        <label>Supplier<input value={supplier} onChange={(e) => setSupplier(e.target.value)} placeholder="Filter supplier…" /></label>
-        <label>From<input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
-        <label>To<input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></label>
+        <label className="lbl">Supplier<input type="text" value={supplier} onChange={(e) => setSupplier(e.target.value)} placeholder="Filter supplier…" id="f" style={{ width: 220 }} /></label>
+        <label className="lbl">From<input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
+        <label className="lbl">To<input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></label>
         <span className="text-sm ml-auto">Aggregate <b>₹{inr(total)}</b> · {filtered.length} bills</span>
-        <button className="btn-ghost" onClick={exportXls}>.xls Export</button>
+        <button className="btn btn-ghost" onClick={exportXls}>.xls Export</button>
       </div>
-      {msg && <div className="text-xs text-amber-300 mb-2">{msg}</div>}
-      <div className="card p-0 overflow-auto max-h-[60vh]">
-        <table className="tbl">
+      {msg && <div className="msg-xs">{msg}</div>}
+      <div className="card p-0 overflow-auto max-h-60vh">
+        <table className="tbl" id="pl">
           <thead><tr><th>Bill No</th><th>Date</th><th>Supplier</th><th>Amount</th></tr></thead>
           <tbody>
             {filtered.map((r) => (
-              <tr key={r._id}><td className="font-mono">{r.purchaseBillNo}</td><td>{new Date(r.date).toLocaleDateString('en-IN')}</td><td>{r.supplierName}</td><td className="font-mono">{inr(r.totalPurchaseAmount)}</td></tr>
+              <tr key={r._id}><td className="mono">{r.purchaseBillNo}</td><td>{new Date(r.date).toLocaleDateString('en-IN')}</td><td>{r.supplierName}</td><td className="mono">{inr(r.totalPurchaseAmount)}</td></tr>
             ))}
           </tbody>
         </table>

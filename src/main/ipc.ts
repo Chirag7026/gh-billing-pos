@@ -4,7 +4,7 @@ import { Product, Ledger, Sale, Purchase } from './models/index.js';
 import { getSettings, saveSettings } from './config.js';
 import { fmtDate, fmtTime, nextBarcode, nextBillNo, round2, wildcardToRegExp } from './util.js';
 import { exportProducts, importProducts, exportLedgers, importLedgers, exportSalesRegister, exportPurchaseRegister, exportLowStock, lowStockRows } from './excel.js';
-import { StockAdjustment } from './models/index.js';
+import { StockAdjustment, Master } from './models/index.js';
 import { parseRptFile, sampleReceiptTemplate, sampleLabelTemplate } from './rpt.js';
 import * as fs from 'node:fs';
 import { printThermal, listWindowsPrinters, buildThermalText } from './printers/thermal.js';
@@ -229,7 +229,8 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
       const barcode = String(doc.barcode).trim();
       const cf = Number(doc.convFactor) || 1;
       const gstRate = [0, 5, 12, 18, 28].includes(Number(doc.gstRate)) ? Number(doc.gstRate) : 0;
-      const payload = {
+      const openingStock = Number(doc.openingStock) || 0;
+      const payload: any = {
         name: String(doc.name).trim(),
         alias: String(doc.alias || '').trim() || barcode,
         barcode,
@@ -249,8 +250,11 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
         cloQty: Number(doc.cloQty) || 0
       };
       let saved;
-      if (doc._id) saved = await Product.findByIdAndUpdate(doc._id, { $set: payload }, { new: true }).lean();
-      else {
+      if (doc._id) {
+        saved = await Product.findByIdAndUpdate(doc._id, { $set: payload }, { new: true }).lean();
+      } else {
+        // V3.1 closing-stock engine: creation seeds cloQty = openingStock × convFactor.
+        payload.cloQty = round2(openingStock * cf);
         try {
           saved = (await Product.create(payload)).toObject();
         } catch (e: any) {
@@ -280,7 +284,8 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
       const f: any = {};
       if (q.group) f.group = q.group;
       if (q.search?.trim()) {
-        f.$and = [f.group ? { group: f.group } : {}, { accountName: wildcardToRegExp(q.search.trim()) }];
+        const rx = wildcardToRegExp(q.search.trim());
+        f.$and = [f.group ? { group: f.group } : {}, { $or: [{ accountName: rx }, { gstin: rx }, { phone: rx }, { city: rx }] }];
         delete f.group;
       }
       const rows = await Ledger.find(f).sort({ accountName: 1 }).limit(1000).lean();
@@ -293,10 +298,13 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
     try {
       await ensureDb();
       if (!doc.accountName?.trim()) throw new Error('Account name required');
+      const gstin = String(doc.gstin || '').trim().toUpperCase();
+      if (gstin && !/^[0-9A-Z]{15}$/.test(gstin)) throw new Error('GSTIN must be 15 alphanumeric characters');
       const payload = {
         accountName: String(doc.accountName).trim(),
         phone: doc.phone || '',
         city: doc.city || '',
+        gstin,
         group: doc.group || 'Sundry Debtors',
         openingBalance: Number(doc.openingBalance) || 0,
         balanceType: doc.balanceType || 'Dr',
@@ -402,7 +410,7 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
         const oldDoc: any = (b as any)._id ? await Sale.findById((b as any)._id).lean() : existing;
         if (oldDoc) {
           for (const it of (oldDoc.items as any[]) || []) {
-            if (it.productId) await Product.findByIdAndUpdate(it.productId, { $inc: { cloQty: Number(it.qty) || 0 } });
+            if (it.productId) await Product.findByIdAndUpdate(it.productId, { $inc: { cloQty: saleUnits(it) } });
           }
           saved = (await Sale.findByIdAndUpdate(oldDoc._id, { $set: doc }, { new: true }).lean()) as any;
         } else {
@@ -418,9 +426,9 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
           } else throw e;
         }
       }
-      // Decrement stock
+      // Decrement stock (qty × pack; zero/negative permitted, no validation)
       for (const it of doc.items as any[]) {
-        if (it.productId) await Product.findByIdAndUpdate(it.productId, { $inc: { cloQty: -(Number(it.qty) || 0) } });
+        if (it.productId) await Product.findByIdAndUpdate(it.productId, { $inc: { cloQty: -saleUnits(it) } });
       }
       // Debit-customer ledger adjustment
       if (doc.paymentType === 'Debit' && doc.customerId) {
@@ -439,7 +447,7 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
       const old: any = await Sale.findById(id).lean();
       if (old) {
         for (const it of old.items || []) {
-          if (it.productId) await Product.findByIdAndUpdate(it.productId, { $inc: { cloQty: Number(it.qty) || 0 } });
+          if (it.productId) await Product.findByIdAndUpdate(it.productId, { $inc: { cloQty: saleUnits(it) } });
         }
         await Sale.findByIdAndDelete(id);
       }
@@ -508,14 +516,26 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
         totalPurchaseAmount: round2(items.reduce((a: number, it: any) => a + it.amount, 0))
       };
       if (b.supplierId) doc.supplierId = b.supplierId;
+      // V3.1: purchase movement in stock units (qty × product convFactor).
+      const convOf = async (it: any): Promise<number> => {
+        try {
+          const p: any = it.productId
+            ? await Product.findById(it.productId, { convFactor: 1 }).lean()
+            : await Product.findOne({ barcode: it.barcode }, { convFactor: 1 }).lean();
+          return Number(p?.convFactor) || 1;
+        } catch {
+          return 1;
+        }
+      };
       let saved: any;
       if (b._id) {
         // Edit path: reverse old stock + supplier balance first.
         const old: any = await Purchase.findById(b._id).lean();
         if (old) {
           for (const it of (old.items as any[]) || []) {
-            if (it.productId) await Product.findByIdAndUpdate(it.productId, { $inc: { cloQty: -(Number(it.qty) || 0) } });
-            else await Product.findOneAndUpdate({ barcode: it.barcode }, { $inc: { cloQty: -(Number(it.qty) || 0) } });
+            const units = round2((Number(it.qty) || 0) * (await convOf(it)));
+            if (it.productId) await Product.findByIdAndUpdate(it.productId, { $inc: { cloQty: -units } });
+            else await Product.findOneAndUpdate({ barcode: it.barcode }, { $inc: { cloQty: -units } });
           }
           if (old.paymentType === 'Debit' && old.supplierId) {
             await Ledger.findByIdAndUpdate(old.supplierId, { $inc: { currentBalance: Number(old.totalPurchaseAmount) || 0 } });
@@ -525,9 +545,10 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
       } else saved = (await Purchase.create(doc)).toObject();
       // Stock increment + rate master update
       for (const it of items) {
+        const units = round2((Number(it.qty) || 0) * (await convOf(it)));
         if (it.productId) {
           await Product.findByIdAndUpdate(it.productId, {
-            $inc: { cloQty: it.qty },
+            $inc: { cloQty: units },
             $set: { purRate: it.purRate, mrp: it.mrp, whRate: it.whRate, rtRate: it.rtRate }
           });
         } else {
@@ -535,7 +556,7 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
             { barcode: it.barcode },
             {
               $set: { name: it.name, purRate: it.purRate, mrp: it.mrp, whRate: it.whRate, rtRate: it.rtRate },
-              $inc: { cloQty: it.qty }
+              $inc: { cloQty: units }
             },
             { upsert: true }
           );
@@ -740,8 +761,70 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
       return fail(e);
     }
   });
+
+  // ---------- masters (groups, units, GST slabs) ----------
+  const MASTER_DEFAULTS: Record<string, any[]> = {
+    group: [{ name: 'GENERAL' }],
+    unit: ['Pcs', 'Box', 'Kg', 'Gm', 'Ltr', 'Mtr', 'Pkt', 'Pack'].map((n) => ({ name: n, code: n.toUpperCase() })),
+    gstRate: [0, 5, 12, 18, 28].map((v) => ({ name: String(v), value: v }))
+  };
+  ipcMain.handle('masters:list', async (_e, q: { kind: string } = { kind: 'group' }) => {
+    try {
+      await ensureDb();
+      if (!['group', 'unit', 'gstRate'].includes(q.kind)) throw new Error('Invalid master kind');
+      let rows = await Master.find({ kind: q.kind }).sort({ name: 1 }).lean();
+      if (!rows.length && MASTER_DEFAULTS[q.kind]) {
+        try {
+          await Master.insertMany(MASTER_DEFAULTS[q.kind].map((d: any) => ({ kind: q.kind, ...d })));
+        } catch {}
+        rows = await Master.find({ kind: q.kind }).sort({ name: 1 }).lean();
+      }
+      return ok(rows.map((r: any) => ({ _id: String(r._id), kind: r.kind, name: r.name, code: r.code || '', value: r.value ?? 0 })));
+    } catch (e) {
+      return fail(e);
+    }
+  });
+  ipcMain.handle('masters:add', async (_e, p: { kind: string; name: string; code?: string; value?: number }) => {
+    try {
+      await ensureDb();
+      if (!['group', 'unit', 'gstRate'].includes(p.kind)) throw new Error('Invalid master kind');
+      const name = String(p.name || '').trim().toUpperCase();
+      if (!name) throw new Error('Name required');
+      const doc: any = { kind: p.kind, name };
+      if (p.kind === 'unit') doc.code = String(p.code || name).toUpperCase();
+      if (p.kind === 'gstRate') {
+        const v = Number(p.value);
+        if (!Number.isFinite(v) || v < 0 || v > 100) throw new Error('Rate must be 0–100');
+        doc.value = v;
+        doc.name = String(v);
+      }
+      try {
+        await Master.create(doc);
+      } catch (e: any) {
+        if (String(e?.message || '').includes('duplicate')) throw new Error(`${name} already exists`);
+        throw e;
+      }
+      return ok({ name });
+    } catch (e) {
+      return fail(e);
+    }
+  });
+  ipcMain.handle('masters:remove', async (_e, id: string) => {
+    try {
+      await ensureDb();
+      await Master.findByIdAndDelete(id);
+      return ok({ id });
+    } catch (e) {
+      return fail(e);
+    }
+  });
 }
 
 function escapeReg(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** V3.1 closing-stock engine: line movement in stock units (qty × pack/convFactor). Zero/negative permitted. */
+function saleUnits(it: any): number {
+  return round2((Number(it.qty) || 0) * (Number(it.pack) || 1));
 }

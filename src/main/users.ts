@@ -29,6 +29,8 @@ export interface UserRow {
   username: string;
   role: string;
   allowedPages: string[];
+  canEditReceipt: boolean;
+  canDeleteReceipt: boolean;
   isActive: boolean;
 }
 
@@ -39,11 +41,13 @@ export async function listUsers(): Promise<UserRow[]> {
     username: u.username,
     role: u.role,
     allowedPages: u.allowedPages || [],
+    canEditReceipt: u.canEditReceipt !== false,
+    canDeleteReceipt: u.canDeleteReceipt !== false,
     isActive: u.isActive
   }));
 }
 
-export async function createUser(p: { username: string; password: string; role: string; allowedPages?: string[] }) {
+export async function createUser(p: { username: string; password: string; role: string; allowedPages?: string[]; canEditReceipt?: boolean; canDeleteReceipt?: boolean }) {
   const name = (p.username || '').trim().toUpperCase();
   if (!name) throw new Error('Username required');
   if (!p.password || p.password.length < 4) throw new Error('Password must be at least 4 characters');
@@ -53,6 +57,8 @@ export async function createUser(p: { username: string; password: string; role: 
       passwordHash: await bcrypt.hash(p.password, 10),
       role: cleanRole(p.role),
       allowedPages: cleanPages(p.allowedPages),
+      canEditReceipt: p.canEditReceipt !== false,
+      canDeleteReceipt: p.canDeleteReceipt !== false,
       isActive: true
     });
   } catch (e: any) {
@@ -64,12 +70,14 @@ export async function createUser(p: { username: string; password: string; role: 
 
 export async function updateUser(
   id: string,
-  p: { role?: string; allowedPages?: string[]; isActive?: boolean; password?: string }
+  p: { role?: string; allowedPages?: string[]; canEditReceipt?: boolean; canDeleteReceipt?: boolean; isActive?: boolean; password?: string }
 ) {
   const u: any = await User.findById(id);
   if (!u) throw new Error('User not found');
   if (p.role) u.role = cleanRole(p.role);
   if (p.allowedPages) u.allowedPages = cleanPages(p.allowedPages);
+  if (p.canEditReceipt !== undefined) u.canEditReceipt = !!p.canEditReceipt;
+  if (p.canDeleteReceipt !== undefined) u.canDeleteReceipt = !!p.canDeleteReceipt;
   if (p.isActive !== undefined) {
     if (u.role === 'ADMIN' && p.isActive === false) {
       const others = await User.countDocuments({ role: 'ADMIN', isActive: true, _id: { $ne: u._id } });

@@ -12,3 +12,4 @@ tools_temp/
 .DS_Store
 Thumbs.db
 release-ci/
+release-new/

@@ -45,6 +45,22 @@
       <label class="lbl">Barcode Label Printer<select><option value="">— select —</option><option selected>TSC TTP-244 Pro</option></select></label>
       <label class="lbl">Label Mode<select><option selected>TSPL</option><option>ZPL</option><option>WINDOWS</option></select></label>
       <div class="col-span-2 text-slate-400" style="font-size:11px">Detected Windows printers: POS-80, TSC TTP-244 Pro</div>
+      <div class="col-span-2" style="border-top:1px solid #1e293b;padding-top:12px">
+        <h3 class="font-bold mb-2">Print Format Templates (.rpt)</h3>
+        <div class="flex items-center gap-2 mb-2 flex-wrap">
+          <span class="text-sm" style="width:144px;text-transform:capitalize">receipt format:</span>
+          <span class="text-sm mono text-emerald-300">Built-in layout</span>
+          <button class="btn btn-ghost" onclick="toast('Receipt template imported (demo)')">Import .rpt…</button>
+          <button class="btn btn-ghost" onclick="toast('Sample written (demo)')">Sample</button>
+        </div>
+        <div class="flex items-center gap-2 mb-2 flex-wrap">
+          <span class="text-sm" style="width:144px;text-transform:capitalize">label format:</span>
+          <span class="text-sm mono text-emerald-300">Built-in layout</span>
+          <button class="btn btn-ghost" onclick="toast('Label template imported (demo)')">Import .rpt…</button>
+          <button class="btn btn-ghost" onclick="toast('Sample written (demo)')">Sample</button>
+        </div>
+        <p class="text-slate-400" style="font-size:11px">Placeholders: {date} {time} {billNo} {customer} {subTotal} {grandTotal} + item columns. Invalid files are rejected with a reason.</p>
+      </div>
     </div>
 
     <div class="card mb-3 text-xs text-slate-400" id="backup-locked">Unlock with the Admin password above to manage Backup &amp; Restore.</div>
@@ -63,6 +79,7 @@
             <tr><td class="mono">A+B</td><td class="mono">09/09/2026 00:31</td><td class="mono">48.2 MB</td><td>valid</td><td><button class="btn btn-ghost" onclick="showRestore('billing_pos-2026-09-09-0031.tar.gz')">Restore…</button></td></tr>
             <tr><td class="mono">A+B</td><td class="mono">08/09/2026 00:30</td><td class="mono">47.9 MB</td><td>valid</td><td><button class="btn btn-ghost" onclick="showRestore('billing_pos-2026-09-08-0030.tar.gz')">Restore…</button></td></tr>
             <tr><td class="mono">A</td><td class="mono">07/09/2026 00:30</td><td class="mono">47.5 MB</td><td>valid</td><td><button class="btn btn-ghost" onclick="showRestore('billing_pos-2026-09-07-0030.tar.gz')">Restore…</button></td></tr>
+            <tr id="empty-snap" hidden><td colspan="5" class="text-center text-slate-500 py-4">No snapshots yet — create the first manual backup.</td></tr>
           </tbody>
         </table>
       </div>

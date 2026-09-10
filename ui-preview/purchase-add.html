@@ -49,6 +49,7 @@
         <tr><td class="mono">1001</td><td><input type="text" class="w-44" value="TATA SALT 1KG"></td><td><input type="number" class="w-16 pq" value="20"></td><td><input type="number" class="w-20 pp" value="22"></td><td><input type="number" class="w-20" value="28"></td><td><input type="number" class="w-20" value="25"></td><td><input type="number" class="w-20" value="28"></td><td class="mono pa">₹440.00</td><td><button class="btn btn-danger" onclick="this.closest('tr').remove();ptotal()">✕</button></td></tr>
         <tr><td class="mono">1002</td><td><input type="text" class="w-44" value="AASHIRVAAD ATTA 5KG"></td><td><input type="number" class="w-16 pq" value="10"></td><td><input type="number" class="w-20 pp" value="190"></td><td><input type="number" class="w-20" value="228"></td><td><input type="number" class="w-20" value="205"></td><td><input type="number" class="w-20" value="215"></td><td class="mono pa">₹1,900.00</td><td><button class="btn btn-danger" onclick="this.closest('tr').remove();ptotal()">✕</button></td></tr>
         <tr><td class="mono">1005</td><td><input type="text" class="w-44" value="FORTUNE MUSTARD OIL 1L"></td><td><input type="number" class="w-16 pq" value="12"></td><td><input type="number" class="w-20 pp" value="175"></td><td><input type="number" class="w-20" value="210"></td><td><input type="number" class="w-20" value="190"></td><td><input type="number" class="w-20" value="198"></td><td class="mono pa">₹2,100.00</td><td><button class="btn btn-danger" onclick="this.closest('tr').remove();ptotal()">✕</button></td></tr>
+        <tr id="empty-row" hidden><td colspan="9" class="text-center text-slate-500 py-6">Scan or search to add purchase rows…</td></tr>
       </tbody>
     </table>
   </div>
@@ -61,12 +62,14 @@
     </div>
   </div>
 
+  <div class="msg" id="pagemsg" hidden></div>
+
   <div class="modal-overlay" id="label-modal" hidden>
     <div class="card w-full max-w-xl max-h-90vh overflow-auto">
       <h2 class="font-bold mb-2">Labels per item (50mm × 25mm)</h2>
-      <div class="flex items-center gap-2 py-1 border"><span class="mono text-xs w-20">1001</span><span class="text-sm flex-1 truncate">TATA SALT 1KG</span><input type="number" min="1" max="999" value="20" class="w-20"></div>
-      <div class="flex items-center gap-2 py-1 border"><span class="mono text-xs w-20">1002</span><span class="text-sm flex-1 truncate">AASHIRVAAD ATTA 5KG</span><input type="number" min="1" max="999" value="10" class="w-20"></div>
-      <div class="flex items-center gap-2 py-1 border"><span class="mono text-xs w-20">1005</span><span class="text-sm flex-1 truncate">FORTUNE MUSTARD OIL 1L</span><input type="number" min="1" max="999" value="12" class="w-20"></div>
+      <div class="flex items-center gap-2 py-1" style="border:1px solid #1e293b"><span class="mono text-xs w-20">1001</span><span class="text-sm flex-1 truncate">TATA SALT 1KG</span><input type="number" min="1" max="999" value="20" class="w-20"></div>
+      <div class="flex items-center gap-2 py-1" style="border:1px solid #1e293b"><span class="mono text-xs w-20">1002</span><span class="text-sm flex-1 truncate">AASHIRVAAD ATTA 5KG</span><input type="number" min="1" max="999" value="10" class="w-20"></div>
+      <div class="flex items-center gap-2 py-1" style="border:1px solid #1e293b"><span class="mono text-xs w-20">1005</span><span class="text-sm flex-1 truncate">FORTUNE MUSTARD OIL 1L</span><input type="number" min="1" max="999" value="12" class="w-20"></div>
       <pre class="code mt-2">SIZE 50 mm, 25 mm
 GAP 2 mm, 0 mm
 DIRECTION 1

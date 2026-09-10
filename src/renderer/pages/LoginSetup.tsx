@@ -39,36 +39,38 @@ export default function LoginSetup() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center pt-8">
+    <div className="bare-wrap">
       <div className="card w-full max-w-sm">
         <div className="text-2xl font-extrabold text-center">G H</div>
-        <div className="text-center text-sm text-slate-400 mb-4">
+        <div className="text-center text-sm text-slate-400 mb-4" id="subtitle">
           {needsSetup ? 'First-run setup — create master Admin credentials' : 'Golden Heera POS — sign in (MongoDB keeps running)'}
         </div>
-        <label>
+        <label className="lbl">
           Username
           <input
+            type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value.toUpperCase())}
             onKeyDown={(e) => e.key === 'Enter' && submit()}
             autoFocus
-            className="font-mono"
+            className="mono"
+            id="user"
           />
         </label>
-        <label className="mt-2 block">
+        <label className="lbl mt-2 block">
           Password
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()} />
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()} id="pass" />
         </label>
         {needsSetup && (
-          <label className="mt-2 block">
+          <label className="lbl mt-2 block">
             Confirm
-            <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()} />
+            <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()} id="confirm" />
           </label>
         )}
-        <button className="btn-primary w-full mt-3" onClick={submit}>
+        <button className="btn btn-primary w-full mt-3" id="go" onClick={submit}>
           {needsSetup ? 'Create Admin' : 'Login / Switch User'}
         </button>
-        {msg && <div className="text-sm text-amber-300 mt-2">{msg}</div>}
+        {msg && <div className="msg" id="msg">{msg}</div>}
       </div>
     </div>
   );

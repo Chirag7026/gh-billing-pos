@@ -47,20 +47,20 @@ export default function SalesLedger() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-3">Sales Ledger</h1>
+      <h1 className="ptitle">Sales Ledger</h1>
       <div className="flex gap-2 mb-3 items-end flex-wrap">
-        <label>From<input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
-        <label>To<input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></label>
-        <button className="btn-ghost" onClick={exportXlsx}>Excel Export</button>
+        <label className="lbl">From<input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
+        <label className="lbl">To<input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></label>
+        <button className="btn btn-ghost" onClick={exportXlsx}>Excel Export</button>
         <span className="text-sm ml-auto">Gross <b>₹{inr(gross)}</b> · Cash <b>₹{inr(cash)}</b> · Debit <b>₹{inr(debit)}</b> · Net <b>₹{inr(gross)}</b></span>
       </div>
-      {msg && <div className="text-xs text-amber-300 mb-2">{msg}</div>}
-      <div className="card p-0 overflow-auto max-h-[60vh]">
+      {msg && <div className="msg-xs">{msg}</div>}
+      <div className="card p-0 overflow-auto max-h-60vh">
         <table className="tbl">
           <thead><tr><th>Sr.</th><th>Date</th><th>C/D</th><th>Bill No.</th><th>Customer</th><th>Amount</th></tr></thead>
           <tbody>
             {filtered.map((r, i) => (
-              <tr key={r._id}><td>{i + 1}</td><td>{r.date}</td><td>{r.paymentType === 'Cash' ? 'C' : 'D'}</td><td className="font-mono">{r.billNo}</td><td>{r.customerName}</td><td className="font-mono">{inr(r.grandTotal)}</td></tr>
+              <tr key={r._id}><td>{i + 1}</td><td>{r.date}</td><td>{r.paymentType === 'Cash' ? 'C' : 'D'}</td><td className="mono">{r.billNo}</td><td>{r.customerName}</td><td className="mono">{inr(r.grandTotal)}</td></tr>
             ))}
           </tbody>
         </table>

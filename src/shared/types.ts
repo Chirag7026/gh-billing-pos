@@ -11,6 +11,8 @@ export interface UserDTO {
   username: string;
   role: UserRole;
   allowedPages: string[];
+  canEditReceipt?: boolean;
+  canDeleteReceipt?: boolean;
   isActive: boolean;
   updatedAt?: string;
 }
@@ -71,6 +73,7 @@ export interface LedgerDTO {
   accountName: string;
   phone?: string;
   city?: string;
+  gstin?: string;
   group: LedgerGroup;
   openingBalance?: number;
   balanceType?: BalanceType;
