@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { useSyncStatus } from '../hooks/useSyncStatus';
 import { useSession, canView } from '../hooks/useSession';
+import { prefs } from '../lib/prefs';
 
 const tiles = [
   { to: '/sales/add', key: 'sales-add', t: 'Sales Add', k: 'F1', d: 'Rapid POS · ADD/REMOVE cart' },
@@ -24,7 +26,11 @@ const tiles = [
 export default function Dashboard() {
   const sync = useSyncStatus();
   const { session } = useSession();
-  const show = tiles.filter((t) => canView(session, t.key) || !session.loggedIn);
+  const [rbacOn, setRbacOn] = useState(false);
+  useEffect(() => {
+    prefs().then((p) => setRbacOn(p.rbacEnabled === true)).catch(() => {});
+  }, []);
+  const show = tiles.filter((t) => canView(session, t.key, rbacOn) || !session.loggedIn);
   return (
     <div>
       <div className="flex items-center justify-between mb-4">

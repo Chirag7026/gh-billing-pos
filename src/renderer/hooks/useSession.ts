@@ -46,9 +46,18 @@ export function expandPages(pages: string[] | undefined): string[] {
   return [...out];
 }
 
-/** RBAC: ADMIN sees everything; others see their allowedPages. */
-export function canView(session: Session, key: string): boolean {
+/** RBAC: with enforcement off, every logged-in user sees everything. */
+export function canView(session: Session, key: string, rbacEnabled = false): boolean {
   if (!session.loggedIn) return false;
+  if (!rbacEnabled) return true;
   if (session.role === 'ADMIN') return true;
   return expandPages(session.allowedPages).includes(key);
+}
+
+/** Receipt action flags; open mode grants both. */
+export function canDo(session: Session, action: 'canEditReceipt' | 'canDeleteReceipt', rbacEnabled = false): boolean {
+  if (!session.loggedIn) return false;
+  if (!rbacEnabled) return true;
+  if (session.role === 'ADMIN') return true;
+  return (session as any)[action] !== false;
 }

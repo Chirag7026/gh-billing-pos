@@ -1,13 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { pos, unwrap, inr } from '../lib/api';
-import { useSession } from '../hooks/useSession';
+import { useSession, canDo } from '../hooks/useSession';
+import { prefs } from '../lib/prefs';
 
 export default function SaleDisplay() {
   const nav = useNavigate();
   const { session } = useSession();
-  const canEdit = session.role === 'ADMIN' || session.canEditReceipt !== false;
-  const canDelete = session.role === 'ADMIN' || session.canDeleteReceipt !== false;
+  const [rbacOn, setRbacOn] = useState(false);
+  useEffect(() => {
+    prefs().then((p) => setRbacOn(p.rbacEnabled === true)).catch(() => {});
+  }, []);
+  const canEdit = canDo(session, 'canEditReceipt', rbacOn);
+  const canDelete = canDo(session, 'canDeleteReceipt', rbacOn);
   const [rows, setRows] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [sel, setSel] = useState<any | null>(null);

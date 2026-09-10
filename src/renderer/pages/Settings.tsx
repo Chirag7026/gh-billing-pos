@@ -342,9 +342,25 @@ export default function Settings() {
         <div className="card mb-3 text-xs text-slate-400" id="backup-locked">Unlock with the Admin password above to manage Backup & Restore.</div>
       )}
 
-      {unlocked && isAdmin && (
+      {unlocked && (isAdmin || s.rbacEnabled !== true) && (
         <div className="card mb-3" id="users-card">
-          <h2 className="cardtitle" style={{ color: '#cdf138', fontSize: 17, marginBottom: 12 }}>User Management (RBAC)</h2>
+          <div className="flex items-center gap-3 flex-wrap" style={{ marginBottom: 12 }}>
+            <h2 className="cardtitle" style={{ color: '#cdf138', fontSize: 17 }}>User Management (RBAC)</h2>
+            {isAdmin && (
+              <label className="flex items-center gap-2 text-sm ml-auto" title="OFF = every user sees everything. ON = enforce per-user pages and receipt actions.">
+                <input
+                  type="checkbox"
+                  checked={s.rbacEnabled === true}
+                  onChange={(e) => setS({ ...s, rbacEnabled: e.target.checked })}
+                  style={{ width: 'auto' }}
+                />
+                Enforcement {s.rbacEnabled === true ? 'ON' : 'OFF'}
+              </label>
+            )}
+          </div>
+          {s.rbacEnabled !== true && (
+            <p className="text-[11px] text-slate-400 mb-2">Enforcement is OFF — every logged-in user can open all pages and manage users. An ADMIN can turn enforcement ON here.</p>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <label className="lbl">Username<input value={userForm.username} disabled={!!editingUserId} onChange={(e) => setUserForm({ ...userForm, username: e.target.value.toUpperCase() })} className="mono" /></label>
             <label className="lbl">Password<input type="password" value={userForm.password} onChange={(e) => setUserForm({ ...userForm, password: e.target.value })} placeholder={editingUserId ? '(blank keeps current)' : ''} /></label>

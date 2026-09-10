@@ -154,6 +154,8 @@ export function registerIpc(getWindow: () => BrowserWindow | null, hooks?: { req
     }
   });
   const needAdmin = () => {
+    // Open mode (RBAC enforcement off): any user may manage accounts.
+    if (getSettings().rbacEnabled !== true) return;
     if (currentRole() !== 'ADMIN') throw new Error('ADMIN role required');
   };
   ipcMain.handle('users:list', async () => {

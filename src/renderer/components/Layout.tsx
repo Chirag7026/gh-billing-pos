@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react';
 import { NavLink, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useSyncStatus } from '../hooks/useSyncStatus';
 import { useSession, canView } from '../hooks/useSession';
+import { prefs } from '../lib/prefs';
 
 const links: { to: string; key: string; label: string; kbd?: string }[] = [
   { to: '/', key: 'dashboard', label: 'Dashboard' },
@@ -32,13 +34,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const nav = useNavigate();
   const loc = useLocation();
   const { session } = useSession();
+  const [rbacOn, setRbacOn] = useState(false);
+  useEffect(() => {
+    prefs().then((p) => setRbacOn(p.rbacEnabled === true)).catch(() => {});
+  }, [loc.pathname]);
 
   // Global F1..F8 quick launch (V2 map)
   useEffectShortcuts(nav);
 
-  const visible = links.filter((l) => canView(session, l.key) || !session.loggedIn);
+  const visible = links.filter((l) => canView(session, l.key, rbacOn) || !session.loggedIn);
   // Route-level RBAC: bounce unauthorized deep links to dashboard.
-  if (session.loggedIn && !canView(session, pathKey(loc.pathname))) {
+  if (session.loggedIn && !canView(session, pathKey(loc.pathname), rbacOn)) {
     return <Navigate to="/" replace />;
   }
 
@@ -84,7 +90,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-import { useEffect } from 'react';
 function useEffectShortcuts(nav: ReturnType<typeof useNavigate>) {
   useEffect(() => {
     const map: Record<string, string> = {

@@ -169,6 +169,7 @@ export interface AppSettings {
   minStockDefault: '1' | 'convFactor';
   receiptTemplate: any | null; // imported receipt .rpt (null = built-in layout)
   labelTemplate: any | null; // imported label .rpt (null = built-in layout)
+  rbacEnabled: boolean; // false = every logged-in user sees everything (open); true = enforce per-user pages/actions. Toggle: ADMIN only.
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -189,5 +190,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   beepDurationSec: 1.5,
   minStockDefault: '1',
   receiptTemplate: null,
-  labelTemplate: null
+  labelTemplate: null,
+  rbacEnabled: false
 };
